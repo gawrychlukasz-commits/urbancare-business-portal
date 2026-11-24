@@ -130,9 +130,24 @@
 <div style="text-align:right"><div class="preview-label">DRAFT SAMPLE · NOT ISSUED</div><h2>INVOICE</h2><b id="previewNumber">11126</b><div class="smallnote" id="previewDates"></div></div></div><hr class="sep">
 <div class="invoice-meta"><div><div class="preview-label">Bill to</div><b id="previewClient"></b><p class="smallnote" id="previewAddress"></p></div><div><div class="preview-label">References</div><p id="previewRef"></p><p id="previewServiceDate" class="smallnote"></p></div></div><hr class="sep">
 <table class="table"><thead><tr><th>Description</th><th>Qty</th><th>Rate</th><th style="text-align:right">Amount</th></tr></thead><tbody><tr><td id="previewService"></td><td id="previewQty"></td><td id="previewRate"></td><td id="previewAmount" style="text-align:right"></td></tr><tr id="previewExtraRow" class="hide"><td id="previewExtraDesc"></td><td id="previewExtraQty"></td><td id="previewExtraRate"></td><td id="previewExtraAmount" style="text-align:right"></td></tr></tbody></table><p class="smallnote">GST not charged — URBANCARE is not registered for GST.</p><hr class="sep"><div class="amount" id="previewTotal"></div><hr class="sep"><div class="two"><div><b>Payment details</b><p class="smallnote" style="white-space:pre-line" id="previewPay"></p></div><div><b>Notes</b><p class="smallnote" style="white-space:pre-line" id="previewNotes"></p></div></div><p class="smallnote" style="margin-top:22px">Draft only. Confirm the billed service, customer, price, payment details and final invoice design before issue.</p></div>
+<div class="panel no-print" id="importExistingInvoicePanel">
+<div class="heading"><div><h2>Import existing invoice</h2><p class="muted">For invoices already sent outside BPL. Save the original PDF securely with the existing customer record.</p></div><span class="status draft">Manual import</span></div>
+<form id="manualInvoiceForm">
+<div class="fields">
+<div class="field span"><label for="manualClient">Client — saved Supabase client</label><select id="manualClient" required><option value="">— Select client —</option></select></div>
+<div class="field"><label for="manualNumber">Original invoice number</label><input id="manualNumber" required maxlength="50" placeholder="e.g. 11126"></div>
+<div class="field"><label for="manualDate">Original issue date</label><input id="manualDate" type="date" required></div>
+<div class="field"><label for="manualAmount">Invoice total (AUD)</label><input id="manualAmount" type="number" min="0" max="99999999.99" step="0.01" required placeholder="0.00"></div>
+<div class="field span"><label for="manualPdf">Original issued invoice (PDF, up to 10 MB)</label><input id="manualPdf" type="file" accept="application/pdf,.pdf" required></div>
+</div>
+<p class="smallnote">Already entered invoice 11126? The importer will attach the PDF to the existing invoice record, not create a duplicate. It will not change its recorded amount or date. Confirm the values match before importing. Payment remains unconfirmed.</p>
+<div class="toolbar"><button class="btn" type="submit" id="manualImportButton">Save existing invoice and PDF</button></div>
+<p id="manualImportStatus" class="smallnote" role="status">Nothing is emailed by this action. PDFs stay in private Supabase storage.</p>
+</form>
+</div>
 <div class="panel no-print"><div class="heading"><div><h2>Invoice history</h2><p class="muted">Read-only issued invoice register, linked to Supabase clients.</p></div><button class="btn outline small" id="refreshInvoiceHistory" type="button">Refresh history</button></div>
 <p class="smallnote" id="invoiceHistoryStatus" role="status">Waiting for connection…</p>
-<table class="table"><thead><tr><th>Invoice</th><th>Client</th><th>Issue date</th><th>Total</th><th>Status</th></tr></thead><tbody id="invoiceHistoryRows"></tbody></table></div>
+<table class="table"><thead><tr><th>Invoice</th><th>Client</th><th>Issue date</th><th>Total</th><th>Status</th><th>Original PDF</th></tr></thead><tbody id="invoiceHistoryRows"></tbody></table></div>
 <div class="panel no-print"><div class="heading"><h2>Outlook email — editable preview</h2><span class="status draft">Not sent</span></div>
 <div class="fields"><div class="field"><label for="mailTo">Recipient — confirm before Outlook draft</label><input id="mailTo" type="email" placeholder="Enter confirmed billing email"></div><div class="field"><label for="mailSubject">Subject</label><input id="mailSubject"></div><div class="field span"><label for="mailBody">Email body</label><textarea id="mailBody" rows="8"></textarea></div></div>
 <div class="toolbar"><button class="btn outline" id="fillEmail" type="button">Generate email from invoice</button><button class="btn outline" id="copyEmail" type="button">Copy email text</button></div>
@@ -211,7 +226,7 @@ async function loadClients(){
  $('clientStatus').textContent='Loading clients…';
  const {data,error}=await sb.from('clients').select('id,business_name,contact_name,email,phone,site_address,billing_address,notes,created_at').order('business_name',{ascending:true});
  if(error){clientRecords=[];renderClients();refreshInvoiceClientOptions();$('clientStatus').textContent='Database error: '+error.message;$('invoiceClientStatus').textContent='Could not load clients: '+error.message;return}
- clientRecords=data||[];renderClients();refreshInvoiceClientOptions();
+ clientRecords=data||[];renderClients();refreshInvoiceClientOptions();refreshManualClientOptions();
 }
 function editClient(id){
  const c=clientRecords.find(r=>r.id===id);if(!c)return;
@@ -272,6 +287,72 @@ function selectInvoiceClient(){
  updateInvoice();
 }
 let invoiceLoadedClientId='';
+// Existing issued invoice import: attach a private original PDF; never email or issue.
+function refreshManualClientOptions(){
+ const select=$('manualClient'),keep=select.value;
+ select.replaceChildren(new Option('— Select saved client —',''));
+ for(const c of clientRecords)select.add(new Option(c.business_name+(c.site_address?' — '+c.site_address:''),c.id));
+ if(clientRecords.some(c=>c.id===keep))select.value=keep;
+}
+function prepareExistingInvoiceImport(inv){
+ $('manualClient').value=inv.client_id;
+ $('manualNumber').value=inv.invoice_number;
+ $('manualDate').value=inv.issue_date;
+ $('manualAmount').value=inv.amount_aud;
+ $('manualPdf').value='';
+ $('manualImportStatus').textContent='Attaching PDF to existing invoice '+inv.invoice_number+'. The amount and issue date will not be modified.';
+ $('importExistingInvoicePanel').scrollIntoView({behavior:'smooth',block:'start'});
+}
+async function openInvoicePdf(path){
+ if(!authUser||!sb)return alert('Sign in first.');
+ const {data,error}=await sb.storage.from('invoice-pdfs').createSignedUrl(path,60);
+ if(error||!data?.signedUrl){alert('Unable to open PDF: '+(error?.message||'Unknown error'));return}
+ // Signed private link expires in 60 seconds, preventing a permanent public PDF URL.
+ window.open(data.signedUrl,'_blank','noopener,noreferrer');
+}
+async function importExistingInvoice(event){
+ event.preventDefault();
+ if(!sb||!authUser)return alert('Sign in to import invoices.');
+ const clientId=$('manualClient').value,invoiceNo=$('manualNumber').value.trim(),
+       date=$('manualDate').value,amount=Number($('manualAmount').value),
+       file=$('manualPdf').files[0];
+ if(!clientRecords.some(c=>c.id===clientId))return alert('Select an existing client.');
+ if(!file||file.type!=='application/pdf'||file.size>10485760||file.size===0)
+   return alert('Choose an original PDF smaller than 10 MB.');
+ if(!invoiceNo||!date||!Number.isFinite(amount)||amount<0)
+   return alert('Check the invoice number, date and total.');
+ const existing=issuedInvoices.find(x=>x.invoice_number===invoiceNo);
+ if(existing){
+   if(existing.client_id!==clientId||existing.issue_date!==date||
+      Math.abs(Number(existing.amount_aud)-amount)>.005)
+     return alert('This invoice number already exists with different details. Select its original client, issue date and total; the issued record cannot be changed here.');
+   if(existing.pdf_path)return alert('This invoice already has an original PDF attached. Replacement is disabled.');
+ }
+ const button=$('manualImportButton'),status=$('manualImportStatus');button.disabled=true;
+ try{
+   status.textContent='Registering invoice…';
+   const {data:id,error:registerError}=await sb.rpc('register_manual_invoice',{
+      p_client_id:clientId,p_invoice_number:invoiceNo,p_issue_date:date,p_amount_aud:amount
+   });
+   if(registerError)throw registerError;
+   const path=authUser.id+'/'+id+'.pdf';
+   status.textContent='Uploading original PDF securely…';
+   const {error:uploadError}=await sb.storage.from('invoice-pdfs')
+      .upload(path,file,{contentType:'application/pdf',upsert:false});
+   if(uploadError)throw uploadError;
+   const {error:attachError}=await sb.rpc('attach_manual_invoice_pdf',{
+     p_invoice_id:id,p_pdf_path:path
+   });
+   if(attachError)throw attachError;
+   $('manualInvoiceForm').reset();
+   await loadInvoiceHistory();
+   status.textContent='Invoice '+invoiceNo+' saved with original PDF. No email sent.';
+ }catch(err){
+   status.textContent='Import incomplete: '+(err?.message||'Unknown error')+
+      '. If the upload succeeded but attaching failed, contact support before retrying.';
+ }finally{button.disabled=false}
+}
+$('manualInvoiceForm').addEventListener('submit',importExistingInvoice);
 // Read-only ledger for invoices already issued. No automatic issue/send.
 let issuedInvoices=[];
 async function loadInvoiceHistory(){
@@ -279,7 +360,7 @@ async function loadInvoiceHistory(){
  const status=$('invoiceHistoryStatus');
  status.textContent='Loading invoice history…';
  const {data,error}=await sb.from('invoice_history')
-   .select('invoice_number,issue_date,amount_aud,issue_status,payment_status,client_id')
+   .select('id,invoice_number,issue_date,amount_aud,issue_status,payment_status,client_id,pdf_path')
    .order('issue_date',{ascending:false});
  if(error){
    status.textContent='Invoice history is not set up yet. Run database/002_invoice_history.sql in Supabase before using it. ('+error.message+')';
@@ -295,11 +376,21 @@ async function loadInvoiceHistory(){
    const values=[inv.invoice_number,c?.business_name||'Client record',inv.issue_date,
       aud(Number(inv.amount_aud)),inv.issue_status==='void'?'Void':(inv.payment_status==='paid'?'Paid':'Sent · payment unconfirmed')];
    for(const value of values){const td=document.createElement('td');td.textContent=value;tr.appendChild(td)}
-   tbody.appendChild(tr);
+   const pdfTd=document.createElement('td');
+   if(inv.pdf_path){
+     const btn=document.createElement('button');btn.type='button';btn.className='btn outline small';btn.textContent='Open PDF';
+     btn.addEventListener('click',()=>openInvoicePdf(inv.pdf_path));
+     pdfTd.appendChild(btn);
+   }else{
+     const btn=document.createElement('button');btn.type='button';btn.className='btn outline small';btn.textContent='Attach PDF';
+     btn.addEventListener('click',()=>prepareExistingInvoiceImport(inv));
+     pdfTd.appendChild(btn);
+   }
+   tr.appendChild(pdfTd);tbody.appendChild(tr);
  }
  if(!issuedInvoices.length){
    const tr=document.createElement('tr'),td=document.createElement('td');
-   td.colSpan=5;td.textContent='No issued invoices recorded yet.';tr.appendChild(td);tbody.appendChild(tr);
+   td.colSpan=6;td.textContent='No issued invoices recorded yet.';tr.appendChild(td);tbody.appendChild(tr);
  }
  $('statInvoiced').textContent=aud(issuedInvoices.filter(x=>x.issue_status!=='void').reduce((sum,x)=>sum+Number(x.amount_aud||0),0));
  status.textContent=issuedInvoices.length+' issued invoice record(s). Payment status requires manual confirmation.';
