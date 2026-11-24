@@ -80,7 +80,7 @@ function updateInvoice(e){
  const hasExtra=!!$('invExtraDesc').value.trim();
  const extra=Math.round(extraQty*extraRate*100)/100;
  const invoiceNo=String(seq)+String(month).padStart(2,'0')+String(year).slice(-2);
- $('previewNumber').textContent=invoiceNo+' (proposed)';
+ $('previewNumber').textContent=invoiceNo;
  $('previewDates').textContent='Issue: '+dateStr(issue)+' · Due: '+dateStr(due);
  $('previewClient').textContent=$('invBillTo').value;
  $('previewAddress').textContent=$('invAddress').value;
