@@ -9,8 +9,8 @@ create table if not exists public.invoice_history (
  issue_date date not null,
  due_date date,
  amount_aud numeric(12,2) not null check (amount_aud >= 0),
- payment_status text not null default 'unpaid'
-   check (payment_status in ('unpaid','part_paid','paid')),
+ payment_status text not null default 'unconfirmed'
+   check (payment_status in ('unconfirmed','unpaid','part_paid','paid')),
  issue_status text not null default 'sent'
    check (issue_status in ('sent','void')),
  notes text,
@@ -43,8 +43,8 @@ begin
   where upper(btrim(business_name))='PADEL POINT PTY LTD';
  insert into public.invoice_history
  (owner_id,client_id,invoice_number,issue_date,due_date,amount_aud,payment_status,issue_status,notes)
- values(target_client.owner_id,target_client.id,'11126','2026-11-24','2026-12-08',
- 680.00,'unpaid','sent','Glass cleaning $600 plus Playtomic access $80. Sent by owner via Outlook. Payment not yet confirmed.')
+ values(target_client.owner_id,target_client.id,'11126','2026-11-24',null,
+ 680.00,'unconfirmed','sent','Glass cleaning $600 plus Playtomic access $80. Sent by owner via Outlook. Payment not yet confirmed.')
  on conflict (owner_id,invoice_number) do nothing;
 end $$;
--- Note: "unpaid" means payment has not been recorded, not confirmation of non-payment.
+-- Payment and due date have not been verified against the final sent invoice.
