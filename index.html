@@ -208,6 +208,22 @@
 <div class="panel no-print"><div class="heading"><div><h2>Quote register</h2><p class="muted">Real quotes linked to Supabase clients. No sample records are imported automatically.</p></div><button type="button" class="btn outline small" id="quotesRefresh">Refresh</button></div>
 <p id="quotesStatus" class="smallnote" role="status">Waiting for connection…</p>
 <table class="table"><thead><tr><th>Quote</th><th>Client</th><th>Amount</th><th>Status</th><th>Actions</th></tr></thead><tbody id="quotesRows"></tbody></table></div>
+<div class="panel no-print" id="importExistingQuotePanel">
+<div class="heading"><div><h2>Import existing quote</h2><p class="muted">Store a PDF you created or sent outside BPL, such as Tribe Padel 1806 or Padel Point 1808.</p></div><span class="status draft">Original PDF</span></div>
+<form id="existingQuoteForm"><div class="fields">
+<div class="field span"><label for="qImportClient">Client — saved client register</label><select id="qImportClient" required><option value="">— Select client —</option></select></div>
+<div class="field"><label for="qImportNumber">Original quote number</label><input id="qImportNumber" maxlength="50" required placeholder="e.g. 1808"></div>
+<div class="field"><label for="qImportDate">Original quote date</label><input id="qImportDate" type="date" required></div>
+<div class="field"><label for="qImportTitle">Service title (optional)</label><input id="qImportTitle" placeholder="e.g. Padel Court Glass Cleaning"></div>
+<div class="field"><label for="qImportAmount">Quote amount (AUD, optional)</label><input id="qImportAmount" type="number" step="0.01" min="0" placeholder="Leave blank if quote offers multiple options"></div>
+<div class="field"><label for="qImportStatus">Actual quote status</label><select id="qImportStatus">
+<option value="sent">Sent</option><option value="approved">Approved</option><option value="declined">Declined</option><option value="cancelled">Cancelled</option><option value="archived">Archived</option>
+</select></div>
+<div class="field span"><label for="qImportPdf">Original PDF (up to 10 MB)</label><input id="qImportPdf" type="file" accept="application/pdf,.pdf" required></div></div>
+<p class="smallnote">Importing does not send or approve a quote. If the quote number already exists for this client, BPL attaches the PDF to that record without changing its status or prices. The original PDF is preserved; create a revision for changes.</p>
+<div class="toolbar"><button class="btn" type="submit" id="qImportButton">Save existing quote and PDF</button></div>
+<p id="qImportMessage" class="smallnote" role="status">Private Supabase PDF storage will be enabled after the database setup.</p>
+</form></div>
 <div class="panel no-print"><div class="heading"><h2 id="quoteFormTitle">New quotation</h2><span class="status draft">Draft</span></div>
 <form id="quoteForm">
 <div class="fields">
@@ -230,7 +246,7 @@
 <div class="field span"><label for="qImage">Site photograph / marked scope image (optional; JPG/PNG/WebP up to 10 MB)</label><input id="qImage" type="file" accept="image/jpeg,image/png,image/webp"></div>
 </div>
 <div class="toolbar"><button class="btn" type="submit" id="qSave">Save quote draft online</button><button class="btn outline" type="button" id="qNew">New quote</button><button class="btn outline" type="button" id="qPrint">Print / Save quote PDF</button></div>
-<p id="qFormStatus" class="smallnote" role="status">Quotation number is not automatically reserved. Draft PDF is not issued or emailed.</p>
+<p id="qFormStatus" class="smallnote" role="status">Quotation number is not automatically reserved. Draft PDF is not issued or emailed.</p><p id="qRevisionLabel" class="smallnote"></p>
 </form></div>
 <div class="quote-sheet" id="quotePreview">
 <div class="quote-top"><div><img src="https://reports.urbancare.au/urbancare-wordmark.png" alt="URBANCARE" class="quote-logo"><div class="quote-brand-sub">EXTERIOR PROPERTY CARE<br>Lukasz Gawrych | ABN 54 638 762 202<br>urbancare.au | service@urbancare.au</div></div><div class="quote-head-right"><strong id="qpNumber">QUOTE — DRAFT</strong><div id="qpDates"></div></div></div>
