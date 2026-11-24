@@ -52,3 +52,77 @@ begin
    end if;
  end if;
 end $$;
+
+-- Additional quotes confirmed from URBANCARE Outlook Sent correspondence.
+-- 1807 North Rocks: original offer dated 16 Nov, $150/court internal or
+-- $200/court both sides, six indoor courts; customer reported existing cleaner.
+-- 1808 Padel Point: email dated 19 Nov, $400 internal-only or $600 both sides,
+-- four courts; subsequent trial completed (not a separate quote).
+-- The Cove Dining: sent to Mirko 23 Nov, approx. 420 m2 pressure cleaning,
+-- $2,500. Quote number has NOT been confirmed, so leave quote_number NULL.
+-- These are metadata-only until user supplies and verifies the original PDFs.
+do $$
+declare v_c public.clients%rowtype; v_n integer; v_inserted integer:=0;
+begin
+ select count(*) into v_n from public.clients
+ where lower(btrim(business_name)) like '%padel point%';
+ if v_n=1 then
+  select * into v_c from public.clients where lower(btrim(business_name)) like '%padel point%';
+  insert into public.quotes(owner_id,client_id,quote_number,status,quote_data,is_verified,delivery_method,sent_date)
+  values(v_c.owner_id,v_c.id,'1808','sent',jsonb_build_object(
+   'imported',true,'importSource','URBANCARE Outlook sent quote 19 Nov 2026','qNumber','1808',
+   'qDate','2026-11-19','qTitle','Padel Court Glass Cleaning',
+   'qScope','Four padel courts; glass cleaning only',
+   'qOption1','Internal glass only — four courts × $100','qPrice1','400',
+   'qOption2','Internal and external glass — four courts × $150','qPrice2','600',
+   'qSelected','1','qCustomTotal','',
+   'sourceQuoteNote','Sent quote via email; separate steel cage cleaning was not included. Original PDF pending.',
+   'originalPdfPending',true
+  ),false,'email','2026-11-19')
+  on conflict(owner_id,quote_number) do nothing;
+  if found then raise notice 'Staged 1808 Padel Point'; else raise notice '1808 already exists: unchanged'; end if;
+ else raise notice 'Padel Point skipped: % name matches',v_n; end if;
+
+ select count(*) into v_n from public.clients
+ where lower(btrim(business_name)) like '%north rocks%padel%'
+ or lower(btrim(business_name)) like '%padel%north rocks%';
+ if v_n=1 then
+  select * into v_c from public.clients
+  where lower(btrim(business_name)) like '%north rocks%padel%'
+  or lower(btrim(business_name)) like '%padel%north rocks%';
+  insert into public.quotes(owner_id,client_id,quote_number,status,quote_data,is_verified,delivery_method,sent_date)
+  values(v_c.owner_id,v_c.id,'1807','declined',jsonb_build_object(
+   'imported',true,'importSource','URBANCARE Outlook sent quote 16 Nov 2026',
+   'qNumber','1807','qDate','2026-11-16','qTitle','Pre-event Padel Court Glass Cleaning',
+   'qScope','Six indoor padel courts at North Rocks before the Australian Padel Tour Finals (2–6 December 2026).',
+   'qOption1','Internal glass only — six courts × $150','qPrice1','900',
+   'qOption2','Internal and external glass — six courts × $200','qPrice2','1200',
+   'qSelected','1','qCustomTotal','',
+   'sourceQuoteNote','Client replied that they already had a cleaner at a better price. Possible quote-number reuse with an older test email: check original PDF and existing register.',
+   'originalPdfPending',true
+  ),false,'email','2026-11-16')
+  on conflict(owner_id,quote_number) do nothing;
+  if found then raise notice 'Staged 1807 North Rocks'; else raise notice '1807 already exists: unchanged; check conflicting test history'; end if;
+ else raise notice 'North Rocks skipped: % name matches (client must exist first)',v_n; end if;
+
+ select count(*) into v_n from public.clients
+ where lower(btrim(business_name)) like '%cove dining%';
+ if v_n=1 then
+  select * into v_c from public.clients where lower(btrim(business_name)) like '%cove dining%';
+  if not exists(select 1 from public.quotes q where q.owner_id=v_c.owner_id
+    and q.client_id=v_c.id and (q.quote_data->>'importKey')='cove-walkway-2026-11-23') then
+   insert into public.quotes(owner_id,client_id,quote_number,status,quote_data,is_verified,delivery_method,sent_date)
+   values(v_c.owner_id,v_c.id,null,'sent',jsonb_build_object(
+     'imported',true,'importKey','cove-walkway-2026-11-23',
+     'importSource','URBANCARE Outlook sent price 23 Nov 2026',
+     'qDate','2026-11-23','qTitle','External Walkways and Entrance Steps Pressure Cleaning',
+     'qScope','High-pressure cleaning of approximately 420 m² of external walkways and entrance steps.',
+     'qSelected','custom','qCustomTotal','2500',
+     'qArrangements','Mirko offered to forward the quote to the property management team. Clean-walkway image was a sample, not a guaranteed outcome.',
+     'sourceQuoteNote','Actual original PDF number unknown; do not assign 1808 because Padel Point uses it.',
+     'originalPdfPending',true
+   ),false,'email','2026-11-23');
+   raise notice 'Staged Cove Dining with number TBC';
+  else raise notice 'Cove already staged: unchanged'; end if;
+ else raise notice 'Cove Dining skipped: % name matches',v_n; end if;
+end $$;
