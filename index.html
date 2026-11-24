@@ -228,6 +228,11 @@
 .client-form-heading{border-top:1px solid #e3e9e2;padding-top:12px;margin-top:5px}
 .client-form-heading strong{font-size:13px;color:#244631}
 .client-form-heading p{margin:4px 0 0}
+#quotesRows .quote-unverified-row{background:#fff0ef;color:#762a2a}
+#quotesRows .quote-verify-button{background:#b52b2b;border-color:#b52b2b;color:#fff;margin-right:6px}
+#quotesRows .quote-verified-label{background:#e2f2e5;border:1px solid #a2d3ad;border-radius:7px;color:#206839;padding:7px 10px;font-size:11px;font-weight:750;margin-right:6px;display:inline-flex}
+#quotesRows .quote-pdf-pending{background:#fff0d8;border:1px solid #e7c18a;border-radius:7px;color:#874b0e;padding:7px 9px;font-size:11px;margin-right:6px;display:inline-flex}
+#quotesRows .quote-delivery-text{font-size:11px;color:#607062;margin-top:5px}
 </style></head><body class="auth-locked">
 <section id="authGate" aria-label="URBANCARE private login"><div class="auth-card">
 <img src="https://reports.urbancare.au/urbancare-wordmark.png" alt="URBANCARE">
@@ -275,10 +280,10 @@
 <div class="field span hide" id="clientVerificationBox"><p class="smallnote"><strong>Verification:</strong> Review the prefilled information. Clicking <strong>Save / Verify client</strong> confirms the details, removes the red highlight and changes the status to VERIFIED.</p></div>
 </div><div class="toolbar"><button type="submit" class="btn" id="clientSave">Save client</button><button class="btn outline" type="button" id="clientCancel">Cancel / New</button></div></form></div></section>
 <section class="section hide" id="quotes">
-<div class="panel no-print"><div class="heading"><div><h2>Quote register</h2><p class="muted">Real quotes linked to Supabase clients. No sample records are imported automatically.</p></div><button type="button" class="btn outline small" id="quotesRefresh">Refresh</button></div>
+<div class="panel no-print"><div class="heading"><div><h2>Quote register</h2><p class="muted">Imported quotes require your review and original PDF.</p></div><button type="button" class="btn outline small" id="quotesRefresh">Refresh</button></div>
 <p id="quotesStatus" class="smallnote" role="status">Waiting for connection…</p>
 <table class="table"><thead><tr><th>Quote</th><th>Client</th><th>Amount</th><th>Status</th><th>Actions</th></tr></thead><tbody id="quotesRows"></tbody></table></div>
-<div class="panel no-print" id="importExistingQuotePanel">
+<div class="panel no-print hide" id="quoteVerifyPanel"><h2>Verify imported quote</h2><p id="qVerifyDetails" class="smallnote" style="white-space:pre-line"></p><div class="field span"><label for="qVerifyPdf">Original PDF (maximum 10 MB)</label><input type="file" id="qVerifyPdf" accept="application/pdf,.pdf"></div><p id="qVerifyStatus" class="smallnote" role="status"></p><div class="toolbar"><button class="btn" type="button" id="qVerifyConfirm">Upload PDF &amp; VERIFY</button><button type="button" class="btn outline" id="qVerifyCancel">Cancel</button></div></div><div class="panel no-print" id="importExistingQuotePanel">
 <div class="heading"><div><h2>Import existing quote</h2><p class="muted">Store a PDF you created or sent outside BPL, such as Tribe Padel 1806 or Padel Point 1808.</p></div><span class="status draft">Original PDF</span></div>
 <form id="existingQuoteForm"><div class="fields">
 <div class="field span"><label for="qImportClient">Client — saved client register</label><select id="qImportClient" required><option value="">— Select client —</option></select></div>
@@ -1059,10 +1064,10 @@ function refreshQuotePreview(){
 }
 function renderQuoteRows(){
  const tbody=$('quotesRows');tbody.replaceChildren();
- const ordered=[...quoteRecords].sort((a,b)=>Number(a.status==='test')-Number(b.status==='test'));
+ const ordered=[...quoteRecords].sort((a,b)=>Number(a.status==='test')-Number(b.status==='test')||Number(a.is_verified===false)-Number(b.is_verified===false)||Date.parse(b.updated_at||0)-Date.parse(a.updated_at||0));
  for(const q of ordered){
   const c=clientRecords.find(x=>x.id===q.client_id),tr=document.createElement('tr');
-  if(q.status==='test')tr.classList.add('quote-test-row');
+  if(q.status==='test')tr.classList.add('quote-test-row');else if(q.is_verified===false)tr.classList.add('quote-unverified-row');
   for(const value of [q.quote_number||'Unnumbered draft',c?.business_name||'Client record',q.quote_data?.imported && !q.quote_data?.qCustomTotal?'See original PDF':aud(quoteTotal(q.quote_data||{}))]){
     const td=document.createElement('td');td.textContent=value;tr.appendChild(td);
   }
@@ -1081,8 +1086,8 @@ function renderQuoteRows(){
     if(error){alert('Could not update quote status: '+error.message);return}
     await loadQuotes();
   });
-  statusTd.appendChild(sel);tr.appendChild(statusTd);
-  const actionTd=document.createElement('td'),open=document.createElement('button');
+  statusTd.appendChild(sel);if(q.delivery_method){const label=document.createElement('div');label.className='quote-delivery-text';label.textContent='Via '+q.delivery_method+(q.sent_date?' · '+q.sent_date:' · date unconfirmed');statusTd.appendChild(label)}tr.appendChild(statusTd);
+  const actionTd=document.createElement('td');if(q.is_verified===false){const verify=document.createElement('button');verify.type='button';verify.className='btn small quote-verify-button';verify.textContent='VERIFY';verify.onclick=()=>openQuoteVerification(q.id);actionTd.appendChild(verify)}else{const label=document.createElement('span');label.className='quote-verified-label';label.textContent='VERIFIED';actionTd.appendChild(label)}if(q.quote_data?.imported&&!q.original_pdf_path){const pending=document.createElement('span');pending.className='quote-pdf-pending';pending.textContent='PDF PENDING';actionTd.appendChild(pending)}const open=document.createElement('button');
   open.className='btn outline small';open.type='button';open.textContent='Open';
   open.addEventListener('click',()=>openQuote(q.id));actionTd.appendChild(open);
   if(q.quote_number){
@@ -1105,13 +1110,12 @@ function renderQuoteRows(){
   const tr=document.createElement('tr'),td=document.createElement('td');td.colSpan=5;
   td.textContent='No quotes saved yet. Create a draft below.';tr.appendChild(td);tbody.appendChild(tr);
  }
- const tests=quoteRecords.filter(x=>x.status==='test').length;
- $('quotesStatus').textContent=(quoteRecords.length-tests)+' real quote(s)'+(tests?' · '+tests+' TEST quote(s) shown at the bottom':'')+'.';
+ const tests=quoteRecords.filter(x=>x.status==='test').length;const pending=quoteRecords.filter(x=>x.is_verified===false&&x.status!=='test').length;$('quotesStatus').textContent=(quoteRecords.length-tests)+' real quote(s)'+(pending?' · '+pending+' awaiting PDF / VERIFY':'')+(tests?' · '+tests+' TEST at bottom':'')+'.';
 }
 async function loadQuotes(){
  if(!sb||!authUser)return;
  $('quotesStatus').textContent='Loading quotes…';
- const {data,error}=await sb.from('quotes').select('id,client_id,quote_number,status,quote_data,image_path,source_quote_id,original_pdf_path,updated_at')
+ const {data,error}=await sb.from('quotes').select('id,client_id,quote_number,status,quote_data,image_path,source_quote_id,original_pdf_path,is_verified,delivery_method,sent_date,updated_at')
    .order('updated_at',{ascending:false}).limit(200);
  if(error){
    $('quotesStatus').textContent='Quote database not active. Run database/006_quotes.sql in Supabase. ('+error.message+')';
