@@ -559,13 +559,32 @@ $('clientForm').addEventListener('submit',async e=>{
    if(!confirm(warning))return;
  }
  $('clientSave').disabled=true;
+ const verifying=existingRecord?.is_verified===false;
+ const savedClientId=editClientId;
  try{
- const query=editClientId?sb.from('clients').update(record).eq('id',editClientId):sb.from('clients').insert(record);
- const {data:saved,error}=await query.select('id,is_verified').single();if(error)throw error;
- if(existingRecord?.is_verified===false&&!saved?.is_verified)throw new Error('Client saved but verification was not confirmed.');
- resetClientForm();await loadClients();
- }catch(err){alert('Client was not saved: '+(err.message||'Unknown error'))}
- finally{$('clientSave').disabled=false}
+   const query=savedClientId?sb.from('clients').update(record).eq('id',savedClientId):sb.from('clients').insert(record);
+   const {data:saved,error}=await query.select('id,is_verified').single();
+   if(error)throw error;
+   if(!saved?.id)throw new Error('The database did not confirm the saved client.');
+   // Read from the database again: the returned value, not browser state,
+   // determines whether the red VERIFY row should disappear.
+   const {data:confirmed,error:checkError}=await sb.from('clients')
+     .select('id,business_name,is_verified,is_active').eq('id',saved.id).single();
+   if(checkError)throw new Error('Saved, but cannot verify database status: '+checkError.message);
+   if(verifying&&confirmed.is_verified!==true)
+      throw new Error('Supabase still reports is_verified=false. The client remains red until the database confirms verification.');
+   resetClientForm();
+   await loadClients();
+   const latest=clientRecords.find(c=>c.id===saved.id);
+   if(verifying&&latest?.is_verified!==true)
+      throw new Error('The client status did not refresh to VERIFIED. Please use Refresh clients and report this message.');
+   $('clientStatus').textContent=(verifying?'VERIFIED: ':'Saved: ')+confirmed.business_name+
+       '. This status was confirmed in Supabase. '+$('clientStatus').textContent;
+ }catch(err){
+   const msg='Unable to complete client '+(verifying?'verification':'save')+': '+(err.message||'Unknown error');
+   $('clientStatus').textContent=msg;
+   alert(msg);
+ }finally{$('clientSave').disabled=false}
 });
 // Client selection uses the actual UUID from Supabase; no mocked customer names.
 function refreshInvoiceClientOptions(){
