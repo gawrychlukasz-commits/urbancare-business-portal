@@ -318,13 +318,14 @@ const SB_URL='https://ysztlxvekbnqoikkvuii.supabase.co';
 const SB_PUBLISHABLE='sb_publishable_HJyktcNs6Cil-rzOckfBAQ_HxrsV_Ji';
 let sb=null;
 function setAuthMessage(message,isError=false){$('authStatus').textContent=isError?'':' '+message;$('authError').textContent=isError?message:'';}
-function showLoggedOut(){authUser=null;clientRecords=[];savedDrafts=[];activeDraftId=null;document.body.classList.add('auth-locked');$('signedInEmail').textContent='';$('authPassword').value='';$('invClient').replaceChildren(new Option('— Sign in to load clients —',''));$('invoiceClientStatus').textContent='Sign in to load clients.';}
+function showLoggedOut(){authUser=null;clientRecords=[];savedDrafts=[];activeDraftId=null;quoteRecords=[];activeQuoteId=null;document.body.classList.add('auth-locked');$('signedInEmail').textContent='';$('authPassword').value='';$('invClient').replaceChildren(new Option('— Sign in to load clients —',''));$('invoiceClientStatus').textContent='Sign in to load clients.';}
 async function showLoggedIn(user){
  if(!user)return showLoggedOut();
  authUser=user;document.body.classList.remove('auth-locked');$('signedInEmail').textContent=user.email||'Signed in';
  await loadClients();
  await loadInvoiceHistory();
  await loadSavedInvoiceDrafts();
+ await loadQuotes();
 }
 async function initAuth(){
  if(!window.supabase?.createClient){setAuthMessage('Cannot load login library. Check internet access and refresh.',true);return}
@@ -420,7 +421,7 @@ async function loadClients(){
  $('clientStatus').textContent='Loading clients…';
  const {data,error}=await sb.from('clients').select('id,business_name,contact_name,email,phone,site_address,billing_address,notes,created_at,is_active').order('business_name',{ascending:true});
  if(error){clientRecords=[];renderClients();refreshInvoiceClientOptions();$('clientStatus').textContent='Database error: '+error.message;$('invoiceClientStatus').textContent='Could not load clients: '+error.message;return}
- clientRecords=data||[];renderClients();refreshInvoiceClientOptions();refreshManualClientOptions();
+ clientRecords=data||[];renderClients();refreshInvoiceClientOptions();refreshManualClientOptions();refreshQuoteClientOptions();
 }
 function editClient(id){
  const c=clientRecords.find(r=>r.id===id);if(!c)return;
@@ -730,6 +731,207 @@ $('newInvoiceDraft').onclick=newInvoiceDraft;
 $('printInvoice').onclick=()=>{if(updateInvoice())window.print()};
 $('fillEmail').onclick=generateInvoiceEmail;
 $('copyEmail').onclick=()=>{const content='To: '+$('mailTo').value+'\nSubject: '+$('mailSubject').value+'\n\n'+$('mailBody').value;if(navigator.clipboard&&window.isSecureContext){navigator.clipboard.writeText(content).then(()=>{$('invoiceSaveStatus').textContent='Email text copied.'}).catch(()=>alert('Copy failed; select the email text manually.'));}else alert('Clipboard unavailable. Select the email text manually.')};
+
+/* URBANCARE Quotes: editable drafts and owner-only quote register. */
+const Q_FIELDS=['qNumber','qDate','qValidity','qTitle','qScope','qMethod','qExclusions','qOption1','qPrice1','qOption2','qPrice2','qSelected','qCustomTotal','qExtras','qArrangements'];
+let quoteRecords=[],activeQuoteId=null,activeQuoteImagePath=null,previewQuoteImageUrl=null;
+const QUOTE_STATUSES=['draft','sent','approved','declined','cancelled','archived'];
+function initQuoteDate(){
+ const now=new Date();const local=new Date(now.getTime()-now.getTimezoneOffset()*60000);
+ $('qDate').value=local.toISOString().slice(0,10);
+}
+function refreshQuoteClientOptions(){
+ const select=$('qClient'),prior=select.value;
+ select.replaceChildren(new Option('— Select active client —',''));
+ for(const c of clientRecords.filter(x=>x.is_active))
+   select.add(new Option(c.business_name+(c.site_address?' — '+c.site_address:''),c.id));
+ if(clientRecords.some(c=>c.id===prior&&c.is_active))select.value=prior;
+ // Inactive clients are still visible when editing an existing historic quote.
+ const quote=quoteRecords.find(q=>q.id===activeQuoteId);
+ if(quote&&!clientRecords.some(c=>c.id===quote.client_id&&c.is_active)){
+   const c=clientRecords.find(c=>c.id===quote.client_id);
+   if(c){select.add(new Option(c.business_name+' (inactive)',c.id));select.value=c.id;}
+ }
+}
+function qValues(){
+ const d={};for(const k of Q_FIELDS)d[k]=$(k).value;
+ return d;
+}
+function quoteTotal(d){
+ const p=Number(d.qSelected==='2'?d.qPrice2:d.qSelected==='custom'?d.qCustomTotal:d.qPrice1);
+ return Number.isFinite(p)&&p>=0?p:0;
+}
+function paintQuoteImage(src){
+ const img=$('qpImage'),placeholder=$('qpImagePlaceholder');
+ img.classList.toggle('hide',!src);placeholder.classList.toggle('hide',!!src);
+ if(src)img.src=src;else img.removeAttribute('src');
+}
+async function loadStoredQuoteImage(path){
+ if(!path){paintQuoteImage(null);return}
+ const {data,error}=await sb.storage.from('quote-images').createSignedUrl(path,1800);
+ if(error||!data?.signedUrl){paintQuoteImage(null);$('qFormStatus').textContent='Image unavailable: '+(error?.message||'Unknown error');return}
+ paintQuoteImage(data.signedUrl);
+}
+function refreshQuotePreview(){
+ const d=qValues();
+ const c=clientRecords.find(x=>x.id===$('qClient').value);
+ $('qpNumber').textContent=d.qNumber?'Quote '+d.qNumber:'QUOTE — DRAFT';
+ const date=d.qDate?new Date(d.qDate+'T12:00:00'):null;
+ $('qpDates').textContent=(date&&!isNaN(date.getTime())?date.toLocaleDateString('en-AU',{day:'numeric',month:'long',year:'numeric'}):'Date: to confirm')+
+   '\nValid for '+(d.qValidity||'—')+' days';
+ $('qpClient').textContent=c?.business_name||'Client to confirm';
+ $('qpAddress').textContent=c?.site_address||'Site address to confirm';
+ $('qpContact').textContent=c?['Contact: '+(c.contact_name||'Not supplied'),c.email||''].filter(Boolean).join(' | '):'';
+ $('qpTitle').textContent=d.qTitle||'Service quotation';
+ $('qpScope').textContent=d.qScope||'Scope to confirm';
+ $('qpMethod').textContent=d.qMethod||'';
+ $('qpExclusions').textContent=d.qExclusions||'Confirm exclusions with client.';
+ $('qpOption1').classList.toggle('hide',!d.qOption1);
+ $('qpOption2').classList.toggle('hide',!d.qOption2);
+ $('qpCustom').classList.toggle('hide',d.qSelected!=='custom');
+ $('qpOption1Label').textContent=d.qOption1;
+ $('qpOption2Label').textContent=d.qOption2;
+ $('qpOption1Amount').textContent=aud(Number(d.qPrice1)||0);
+ $('qpOption2Amount').textContent=aud(Number(d.qPrice2)||0);
+ $('qpCustomAmount').textContent=aud(Number(d.qCustomTotal)||0);
+ $('qpArrangements').textContent=d.qArrangements||'Access, water, parking, working hours and proposed date to be confirmed.';
+ $('qpExtras').textContent=d.qExtras||'';
+ const q=quoteRecords.find(q=>q.id===activeQuoteId);
+ $('qFormTitle').textContent=activeQuoteId?'Edit quote '+(q?.quote_number||'(unnumbered)'):'New quotation';
+ $('qSave').disabled=!!q&&q.status!=='draft';
+ $('qSave').textContent=q?.status==='draft'?'Save quote draft online':'Save quote draft online';
+ $('quotePreview').querySelector('.quote-draft').textContent=
+   q?.status&&q.status!=='draft'?'QUOTE STATUS: '+q.status.toUpperCase()+' — Check before reusing.':
+   'PREPARED FOR REVIEW — QUOTATION NOT YET ISSUED';
+}
+function renderQuoteRows(){
+ const tbody=$('quotesRows');tbody.replaceChildren();
+ for(const q of quoteRecords){
+  const c=clientRecords.find(x=>x.id===q.client_id),tr=document.createElement('tr');
+  for(const value of [q.quote_number||'Unnumbered draft',c?.business_name||'Client record',aud(quoteTotal(q.quote_data||{}))]){
+    const td=document.createElement('td');td.textContent=value;tr.appendChild(td);
+  }
+  const statusTd=document.createElement('td'),sel=document.createElement('select');
+  sel.setAttribute('aria-label','Change status for quote '+(q.quote_number||q.id));
+  for(const status of QUOTE_STATUSES)sel.add(new Option(status[0].toUpperCase()+status.slice(1),status));
+  sel.value=q.status;
+  sel.addEventListener('change',async()=>{
+    const next=sel.value;sel.value=q.status;
+    if(next===q.status)return;
+    if(next!=='draft'&&!q.quote_number){alert('Save a unique quote number before changing status.');return}
+    if(!confirm('Set quote '+(q.quote_number||'(unnumbered)')+' to '+next+'? This records its status only and does not send an email.'))return;
+    const {error}=await sb.from('quotes').update({status:next,updated_at:new Date().toISOString()}).eq('id',q.id);
+    if(error){alert('Could not update quote status: '+error.message);return}
+    await loadQuotes();
+  });
+  statusTd.appendChild(sel);tr.appendChild(statusTd);
+  const actionTd=document.createElement('td'),open=document.createElement('button');
+  open.className='btn outline small';open.type='button';open.textContent='Open';
+  open.addEventListener('click',()=>openQuote(q.id));actionTd.appendChild(open);
+  tr.appendChild(actionTd);tbody.appendChild(tr);
+ }
+ if(!quoteRecords.length){
+  const tr=document.createElement('tr'),td=document.createElement('td');td.colSpan=5;
+  td.textContent='No quotes saved yet. Create a draft below.';tr.appendChild(td);tbody.appendChild(tr);
+ }
+ $('quotesStatus').textContent=quoteRecords.length+' saved quote(s) in Supabase.';
+}
+async function loadQuotes(){
+ if(!sb||!authUser)return;
+ $('quotesStatus').textContent='Loading quotes…';
+ const {data,error}=await sb.from('quotes').select('id,client_id,quote_number,status,quote_data,image_path,updated_at')
+   .order('updated_at',{ascending:false}).limit(200);
+ if(error){
+   $('quotesStatus').textContent='Quote database not active. Run database/006_quotes.sql in Supabase. ('+error.message+')';
+   return;
+ }
+ quoteRecords=data||[];
+ renderQuoteRows();refreshQuoteClientOptions();refreshQuotePreview();
+}
+function newQuote(){
+ if(!confirm('Start a new quote? Save your current changes first.'))return;
+ activeQuoteId=null;activeQuoteImagePath=null;previewQuoteImageUrl=null;
+ $('quoteForm').reset();initQuoteDate();refreshQuoteClientOptions();paintQuoteImage(null);
+ $('qFormStatus').textContent='New unsaved quotation. No quote number is reserved.';
+ refreshQuotePreview();
+}
+async function openQuote(id){
+ const q=quoteRecords.find(x=>x.id===id);if(!q)return;
+ if(!confirm('Open saved quote? This replaces unsaved quote form changes.'))return;
+ activeQuoteId=id;activeQuoteImagePath=q.image_path||null;
+ const d=q.quote_data||{};
+ for(const field of Q_FIELDS)$(field).value=typeof d[field]==='string'?d[field]:'';
+ $('qNumber').value=q.quote_number||'';
+ refreshQuoteClientOptions();$('qClient').value=q.client_id;
+ $('qImage').value='';paintQuoteImage(null);
+ if(q.image_path)await loadStoredQuoteImage(q.image_path);
+ refreshQuotePreview();
+ $('qFormStatus').textContent='Loaded quote '+(q.quote_number||'(unnumbered)')+'. Status: '+q.status+'. Only drafts can be edited.';
+ $('quoteFormTitle').scrollIntoView({behavior:'smooth',block:'start'});
+}
+async function saveQuote(event){
+ event.preventDefault();
+ if(!sb||!authUser)return alert('Sign in first.');
+ const clientId=$('qClient').value,d=qValues();
+ if(!clientRecords.some(c=>c.id===clientId))return alert('Select a client.');
+ if(!d.qScope.trim()||!d.qDate)return alert('Enter the scope and quote date.');
+ if(!Number.isInteger(Number(d.qValidity))||Number(d.qValidity)<1)return alert('Enter valid quote validity days.');
+ if([d.qPrice1,d.qPrice2,d.qCustomTotal].some(x=>!Number.isFinite(Number(x))||Number(x)<0))
+   return alert('Check quote amounts.');
+ const current=quoteRecords.find(q=>q.id===activeQuoteId);
+ if(current&&current.status!=='draft')return alert('This quote has already left Draft status and cannot be edited in this form.');
+ const quoteNo=d.qNumber.trim()||null;
+ const file=$('qImage').files[0];
+ if(file&&(!['image/jpeg','image/png','image/webp'].includes(file.type)||file.size>10485760||file.size===0))
+    return alert('Upload a JPG, PNG or WebP image smaller than 10 MB.');
+ const button=$('qSave');button.disabled=true;
+ try{
+   const payload={client_id:clientId,quote_number:quoteNo,quote_data:d,updated_at:new Date().toISOString()};
+   const request=activeQuoteId?sb.from('quotes').update(payload).eq('id',activeQuoteId):
+      sb.from('quotes').insert({...payload,owner_id:authUser.id,status:'draft'});
+   const {data,error}=await request.select('id').single();
+   if(error)throw error;
+   activeQuoteId=data.id;
+   if(file){
+     const ext=file.type==='image/png'?'png':file.type==='image/webp'?'webp':'jpg';
+     const path=authUser.id+'/'+activeQuoteId+'/'+crypto.randomUUID()+'.'+ext;
+     const uploaded=await sb.storage.from('quote-images').upload(path,file,{contentType:file.type,upsert:false});
+     if(uploaded.error)throw uploaded.error;
+     const saved=await sb.from('quotes').update({image_path:path,updated_at:new Date().toISOString()})
+       .eq('id',activeQuoteId).select('id').single();
+     if(saved.error)throw saved.error;
+     activeQuoteImagePath=path;
+     $('qImage').value='';
+   }
+   await loadQuotes();
+   if(activeQuoteImagePath)await loadStoredQuoteImage(activeQuoteImagePath);
+   $('qFormStatus').textContent='Quote draft saved online. No quote sent or issued.';
+ }catch(err){
+   $('qFormStatus').textContent='Unable to complete quote save: '+(err.message||'Unknown error')+
+     '. If the image failed, the text may have been saved; refresh the register before retrying.';
+ }finally{button.disabled=false;refreshQuotePreview()}
+}
+$('quoteForm').addEventListener('submit',saveQuote);
+$('qNew').addEventListener('click',newQuote);
+$('quotesRefresh').addEventListener('click',loadQuotes);
+$('quoteForm').addEventListener('input',refreshQuotePreview);
+$('qClient').addEventListener('change',refreshQuotePreview);
+$('qSelected').addEventListener('change',refreshQuotePreview);
+$('qImage').addEventListener('change',()=>{
+ const file=$('qImage').files[0];
+ if(previewQuoteImageUrl){URL.revokeObjectURL(previewQuoteImageUrl);previewQuoteImageUrl=null}
+ if(file){previewQuoteImageUrl=URL.createObjectURL(file);paintQuoteImage(previewQuoteImageUrl)}
+ else if(activeQuoteImagePath)void loadStoredQuoteImage(activeQuoteImagePath);
+ else paintQuoteImage(null);
+});
+$('qPrint').addEventListener('click',()=>{
+ refreshQuotePreview();
+ if(!$('qClient').value||!$('qScope').value.trim())return alert('Choose a client and enter the quoted scope first.');
+ document.body.classList.add('print-quote');
+ window.print();
+});
+window.addEventListener('afterprint',()=>document.body.classList.remove('print-quote'));
+initQuoteDate();refreshQuotePreview();
 loadInvoice();
 void initAuth();
 </script></body></html>
