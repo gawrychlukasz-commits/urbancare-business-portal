@@ -5,7 +5,8 @@ function openQuoteVerification(id){
  if(!q||q.is_verified!==false)return;
  verifyingQuoteId=id;
  const d=q.quote_data||{}, c=clientRecords.find(x=>x.id===q.client_id);
- const lines=['Quote: '+(q.quote_number||'NUMBER NOT CONFIRMED'),
+ const lines=['BPL internal reference: '+(q.quote_number||'NUMBER NOT CONFIRMED'),
+ 'Number printed on client PDF: '+(q.original_quote_number||q.quote_number||'NOT CONFIRMED'),
  'Client: '+(c?.business_name||'UNKNOWN'),
  'Quote date: '+(d.qDate||'UNKNOWN'),
  'Service: '+(d.qTitle||'Not provided'),
@@ -16,7 +17,7 @@ function openQuoteVerification(id){
  'Status: '+q.status.toUpperCase()+' (not proof of client acceptance)',
  'Delivery: '+(q.delivery_method||'Unknown')+' / '+(q.sent_date||'Date not confirmed'),
  'Original PDF: '+(q.original_pdf_path?'SAVED':'NOT YET SAVED'),
- d.sourceQuoteNote?'Notes: '+d.sourceQuoteNote:''].filter(Boolean);
+ d.sourceQuoteNote&&!(q.original_quote_number&&d.importKey==='cove-walkway-2026-11-23')?'Notes: '+d.sourceQuoteNote:''].filter(Boolean);
  $('qVerifyDetails').textContent=lines.join('\n');
  $('qVerifyPdf').value='';$('qVerifyPdf').disabled=Boolean(q.original_pdf_path);
  $('qVerifyConfirm').textContent=q.original_pdf_path?'VERIFY quote':'Upload original PDF & VERIFY';
@@ -35,7 +36,8 @@ $('qVerifyConfirm').onclick=async()=>{
  if(!q.original_pdf_path&&(!file||file.size===0||file.size>10485760||!(file.type==='application/pdf'||/\.pdf$/i.test(file.name)))){
   $('qVerifyStatus').textContent='Select the original PDF (up to 10 MB).';return;
  }
- if(!confirm('Confirm all details match the original PDF for quote '+q.quote_number+'? This does not record customer acceptance.'))return;
+ if(!confirm('Confirm the PDF is numbered '+(q.original_quote_number||q.quote_number)+
+    ' and matches BPL reference '+q.quote_number+' and the listed details? This does not record customer acceptance.'))return;
  const btn=$('qVerifyConfirm');btn.disabled=true;
  try{
   if(!q.original_pdf_path){
