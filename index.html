@@ -101,7 +101,7 @@
 <section class="section hide" id="reports"><div class="panel"><h2>Existing reports stay intact</h2><p>Continue using the live reporting tool while we develop secure online records and a reliable migration method.</p><a class="btn" style="display:inline-block;text-decoration:none" href="https://reports.urbancare.au/">Open existing reporting tool</a><p class="smallnote">On your GitHub Pages deployment this opens your existing report creator. It currently stores reports on each device.</p></div><div class="panel"><h2>Next integration</h2><p class="muted">Use the existing export-backup function to prepare for migration, then link saved reports to shared client IDs and job IDs in the future database. Do not overwrite browser data.</p></div></section>
 <section class="section hide" id="invoices">
 <div class="panel no-print"><div class="heading"><div><h2>Editable invoice draft</h2><p class="muted">Prepare a draft for Padel Point, add extra items, and review the PDF and email before issue.</p></div><span class="status draft">Draft only</span></div>
-<p class="smallnote"><b>Privacy:</b> This development version saves the invoice draft only in this browser. It does not send email or create an Outlook draft automatically. Do not enter bank details or confidential customer information until secure login and storage are enabled.</p>
+<p class="smallnote"><b>Privacy:</b> Saved drafts are stored under your authenticated Supabase account when the invoice_drafts table is activated. Existing local drafts can be imported by saving them online. The portal does not issue invoices or create Outlook drafts automatically.</p>
 <form id="invoiceForm">
 <div class="fields">
 <div class="field"><label for="invClient">Client — from live client register</label><select id="invClient"><option value="">— Select saved client —</option></select><p id="invoiceClientStatus" class="smallnote" role="status">Sign in to load clients.</p></div>
@@ -122,8 +122,8 @@
 <div class="field span"><label for="invNotes">Invoice notes (editable)</label><textarea id="invNotes" rows="3" placeholder="Additional job details or payment note"></textarea></div>
 <div class="field span"><label for="invPay">Bank transfer instructions — placeholder until confirmed</label><textarea id="invPay" rows="3">Bank name: [TO CONFIRM]\nAccount name: [TO CONFIRM]\nBSB: [TO CONFIRM]\nAccount number: [TO CONFIRM]</textarea></div>
 </div>
-<div class="toolbar"><button class="btn" type="submit">Update preview</button><button class="btn outline" type="button" id="saveInvoice">Save draft on this device</button><button class="btn outline" type="button" id="printInvoice">Print / Save sample PDF</button></div>
-<div class="muted" id="invoiceSaveStatus" role="status">Unsaved draft. Figures are examples until you verify actual work and agreed price.</div>
+<div class="toolbar"><button class="btn" type="submit">Update preview</button><button class="btn outline" type="button" id="saveInvoice">Save draft to Supabase</button><button class="btn outline" type="button" id="newInvoiceDraft">New draft</button><button class="btn outline" type="button" id="printInvoice">Print / Save sample PDF</button></div>
+<div class="muted" id="invoiceSaveStatus" role="status">Unsaved draft. Figures are examples until you verify actual work and agreed price.</div><div class="field" style="margin-top:14px"><label for="savedInvoiceDrafts">Saved invoice drafts — online</label><select id="savedInvoiceDrafts"><option value="">— New unsaved draft —</option></select></div><div class="toolbar"><button class="btn outline small" type="button" id="openSavedInvoice">Open selected draft</button><button class="btn outline small" type="button" id="refreshSavedInvoice">Refresh drafts</button></div><p class="smallnote">Drafts sync to your Supabase account. They do not allocate invoice numbers, issue invoices, or email customers. Invoice 11126 has already been sent and must not be reused.</p>
 </form></div>
 <div class="invoice" id="invoicePreview">
 <div class="invoice-meta"><div><img src="https://reports.urbancare.au/urbancare-wordmark.png" alt="URBANCARE" style="width:200px;max-width:100%"><div class="muted">EXTERIOR PROPERTY CARE</div><p class="smallnote">Lukasz Gawrych · ABN 54 638 762 202<br>service@urbancare.au · urbancare.au</p></div>
@@ -151,12 +151,13 @@ const SB_URL='https://ysztlxvekbnqoikkvuii.supabase.co';
 const SB_PUBLISHABLE='sb_publishable_HJyktcNs6Cil-rzOckfBAQ_HxrsV_Ji';
 let sb=null;
 function setAuthMessage(message,isError=false){$('authStatus').textContent=isError?'':' '+message;$('authError').textContent=isError?message:'';}
-function showLoggedOut(){authUser=null;clientRecords=[];document.body.classList.add('auth-locked');$('signedInEmail').textContent='';$('authPassword').value='';$('invClient').replaceChildren(new Option('— Sign in to load clients —',''));$('invoiceClientStatus').textContent='Sign in to load clients.';}
+function showLoggedOut(){authUser=null;clientRecords=[];savedDrafts=[];activeDraftId=null;document.body.classList.add('auth-locked');$('signedInEmail').textContent='';$('authPassword').value='';$('invClient').replaceChildren(new Option('— Sign in to load clients —',''));$('invoiceClientStatus').textContent='Sign in to load clients.';}
 async function showLoggedIn(user){
  if(!user)return showLoggedOut();
  authUser=user;document.body.classList.remove('auth-locked');$('signedInEmail').textContent=user.email||'Signed in';
  await loadClients();
  await loadInvoiceHistory();
+ await loadSavedInvoiceDrafts();
 }
 async function initAuth(){
  if(!window.supabase?.createClient){setAuthMessage('Cannot load login library. Check internet access and refresh.',true);return}
@@ -322,6 +323,8 @@ function updateInvoice(e){
  const extra=Math.round(extraQty*extraRate*100)/100;
  const invoiceNo=String(seq)+String(month).padStart(2,'0')+String(year).slice(-2);
  $('previewNumber').textContent=invoiceNo;
+ const duplicate=issuedInvoices.some(x=>x.invoice_number===invoiceNo&&x.issue_status!=='void');
+ if(duplicate){$('invoiceSaveStatus').textContent='Warning: '+invoiceNo+' has already been issued. This is a draft only; choose a different sequence before future issue.';}
  $('previewDates').textContent='Issue: '+dateStr(issue)+' · Due: '+dateStr(due);
  $('previewClient').textContent=$('invBillTo').value;
  $('previewAddress').textContent=$('invAddress').value;
@@ -342,11 +345,84 @@ function generateInvoiceEmail(){
  $('mailBody').value='Hi,\n\nThank you for choosing URBANCARE.\n\nPlease find the invoice for '+$('invService').value+'.\n\nInvoice reference: '+$('previewNumber').textContent.replace(' (proposed)','')+'\nTotal: '+$('previewTotal').textContent+'\nPayment due: '+$('previewDates').textContent.split('Due: ')[1]+'\n\nPlease let me know if you have any questions.\n\nLukasz\nURBANCARE Exterior Property Care';
  $('invoiceSaveStatus').textContent='Email preview generated. No Outlook draft has been created.';
 }
-function saveInvoice(){
- if(!updateInvoice())return;
- const record={};for(const id of INV_FIELDS)record[id]=$(id).value;
- try{localStorage.setItem(INV_KEY,JSON.stringify(record));$('invoiceSaveStatus').textContent='Draft saved in this browser only. Not issued or emailed.';}
- catch(e){$('invoiceSaveStatus').textContent='Browser storage failed. Copy details before leaving.';}
+let savedDrafts=[],activeDraftId=null;
+function draftRecord(){
+ const fields={};for(const id of INV_FIELDS)fields[id]=$(id).value;
+ return {client_id:clientRecords.some(c=>c.id===fields.invClient)?fields.invClient:null,draft_data:fields};
+}
+function renderDraftList(){
+ const select=$('savedInvoiceDrafts');
+ select.replaceChildren(new Option('— New unsaved draft —',''));
+ for(const d of savedDrafts){
+   const c=clientRecords.find(x=>x.id===d.client_id);
+   const label=(c?.business_name||d.draft_data?.invBillTo||'Unassigned')+
+     ' · '+new Date(d.updated_at).toLocaleDateString('en-AU')+
+     ' · '+(d.draft_data?.invService||'Invoice draft');
+   select.add(new Option(label,d.id));
+ }
+ if(activeDraftId&&savedDrafts.some(d=>d.id===activeDraftId))select.value=activeDraftId;
+}
+async function loadSavedInvoiceDrafts(){
+ if(!sb||!authUser)return;
+ const {data,error}=await sb.from('invoice_drafts')
+   .select('id,client_id,draft_data,updated_at')
+   .order('updated_at',{ascending:false}).limit(100);
+ if(error){
+   $('invoiceSaveStatus').textContent='Online draft storage not ready: '+error.message+'. Run database/003_invoice_drafts.sql in Supabase.';
+   return;
+ }
+ savedDrafts=data||[];renderDraftList();
+}
+async function saveInvoice(){
+ if(!updateInvoice()||!authUser||!sb){alert('Sign in to save drafts.');return}
+ const payload=draftRecord();
+ const btn=$('saveInvoice');btn.disabled=true;
+ try{
+   // Editing a selected draft updates it; new drafts create a new record.
+   const request=activeDraftId
+     ? sb.from('invoice_drafts').update({...payload,updated_at:new Date().toISOString()}).eq('id',activeDraftId)
+     : sb.from('invoice_drafts').insert({...payload,owner_id:authUser.id});
+   const {data,error}=await request.select('id').single();
+   if(error)throw error;
+   activeDraftId=data.id;
+   // Keep a local fallback as well, without confusing it with a submitted invoice.
+   try{localStorage.setItem(INV_KEY,JSON.stringify(payload.draft_data))}catch(e){}
+   await loadSavedInvoiceDrafts();
+   $('invoiceSaveStatus').textContent='Draft saved online in Supabase. Not issued or emailed.';
+ }catch(err){
+   $('invoiceSaveStatus').textContent='Online save failed: '+(err.message||'Unknown error');
+ }finally{btn.disabled=false}
+}
+function openSavedInvoice(){
+ const id=$('savedInvoiceDrafts').value;
+ if(!id){alert('Choose a saved draft from the dropdown.');return}
+ const d=savedDrafts.find(x=>x.id===id);if(!d)return;
+ if(!confirm('Open this draft? It will replace the current unsaved form contents.'))return;
+ activeDraftId=d.id;
+ for(const field of INV_FIELDS){if(typeof d.draft_data?.[field]==='string'&&$(field))$(field).value=d.draft_data[field]}
+ invoiceLoadedClientId=d.client_id||'';
+ refreshInvoiceClientOptions();
+ if(d.client_id&&clientRecords.some(c=>c.id===d.client_id))$('invClient').value=d.client_id;
+ updateInvoice();
+ $('invoiceSaveStatus').textContent='Loaded saved online draft. Changes will update this draft when saved.';
+}
+function newInvoiceDraft(){
+ if(!confirm('Start a new invoice draft? Save your current changes online first.'))return;
+ activeDraftId=null;
+ $('invoiceForm').reset();
+ $('invClient').value='';
+ $('invBillTo').value='';
+ $('invAddress').value='';
+ $('mailTo').value='';
+ // Invoice 11126 was issued this month: suggest the next sequence but do not reserve it.
+ const d=$('invDate').value;
+ const month=d.slice(5,7),year=d.slice(2,4);
+ const issuedInMonth=issuedInvoices.filter(x=>x.invoice_number?.endsWith(month+year));
+ const sequences=issuedInMonth.map(x=>Number(x.invoice_number.slice(0,-4))).filter(Number.isInteger);
+ $('invSequence').value=String(Math.max(0,...sequences)+1);
+ $('savedInvoiceDrafts').value='';
+ updateInvoice();
+ $('invoiceSaveStatus').textContent='New unsaved draft. Number not assigned until issue.';
 }
 function loadInvoice(){
  try{
@@ -363,6 +439,9 @@ function loadInvoice(){
 $('invClient').addEventListener('change',selectInvoiceClient);
 $('invoiceForm').onsubmit=updateInvoice;
 $('saveInvoice').onclick=saveInvoice;
+$('openSavedInvoice').onclick=openSavedInvoice;
+$('refreshSavedInvoice').onclick=loadSavedInvoiceDrafts;
+$('newInvoiceDraft').onclick=newInvoiceDraft;
 $('printInvoice').onclick=()=>{if(updateInvoice())window.print()};
 $('fillEmail').onclick=generateInvoiceEmail;
 $('copyEmail').onclick=()=>{const content='To: '+$('mailTo').value+'\nSubject: '+$('mailSubject').value+'\n\n'+$('mailBody').value;if(navigator.clipboard&&window.isSecureContext){navigator.clipboard.writeText(content).then(()=>{$('invoiceSaveStatus').textContent='Email text copied.'}).catch(()=>alert('Copy failed; select the email text manually.'));}else alert('Clipboard unavailable. Select the email text manually.')};
