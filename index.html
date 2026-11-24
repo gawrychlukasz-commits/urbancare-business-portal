@@ -308,7 +308,7 @@ async function openInvoicePdf(path){
  const {data,error}=await sb.storage.from('invoice-pdfs').createSignedUrl(path,60);
  if(error||!data?.signedUrl){alert('Unable to open PDF: '+(error?.message||'Unknown error'));return}
  // Signed private link expires in 60 seconds, preventing a permanent public PDF URL.
- window.open(data.signedUrl,'_blank','noopener,noreferrer');
+ const link=document.createElement('a');link.href=data.signedUrl;link.target='_blank';link.rel='noopener noreferrer';document.body.appendChild(link);link.click();link.remove();
 }
 async function importExistingInvoice(event){
  event.preventDefault();
