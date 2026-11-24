@@ -222,6 +222,18 @@ $('clientForm').addEventListener('submit',async e=>{
  e.preventDefault();if(!sb||!authUser){alert('Sign in first.');return}
  const record={business_name:$('clientBusiness').value.trim(),contact_name:$('clientContact').value.trim()||null,email:$('clientEmail').value.trim()||null,phone:$('clientPhone').value.trim()||null,site_address:$('clientSite').value.trim()||null,billing_address:$('clientBilling').value.trim()||null,notes:$('clientNotes').value.trim()||null};
  if(!record.business_name){alert('Enter business name');return}
+ // Warn about likely duplicates before writing. Matching names at different sites
+ // can be legitimate, so let the owner explicitly confirm the exception.
+ const normalize=v=>String(v||'').trim().replace(/\\s+/g,' ').toLocaleLowerCase('en-AU');
+ const potential=clientRecords.filter(c=>c.id!==editClientId&&normalize(c.business_name)===normalize(record.business_name));
+ if(potential.length){
+   const sameSite=potential.some(c=>normalize(c.site_address)===normalize(record.site_address));
+   const warning=sameSite
+     ? 'A client with this business name and site address already exists. Edit the existing record instead?'
+     : 'A client with this business name already exists at another address. Save a separate client anyway?';
+   if(sameSite){alert(warning);return}
+   if(!confirm(warning))return;
+ }
  $('clientSave').disabled=true;
  try{
  const query=editClientId?sb.from('clients').update(record).eq('id',editClientId):sb.from('clients').insert(record);
