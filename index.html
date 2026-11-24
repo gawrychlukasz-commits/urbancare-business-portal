@@ -18,8 +18,42 @@
 <section class="section hide" id="clients"><div class="toolbar"><input id="clientSearch" aria-label="Search client" placeholder="Search client or contact"></div><div class="panel"><div class="heading"><h2>Client directory</h2><span class="status draft">Sample data</span></div><table class="table"><thead><tr><th>Business</th><th>Contact</th><th>Location</th></tr></thead><tbody id="clientRows"></tbody></table></div></section>
 <section class="section hide" id="quotes"><div class="panel"><div class="heading"><h2>Quotes</h2><span class="status draft">Proposed module</span></div><p class="muted">Quotes will be linked to the same client record and job history. Your final quote layout will be retained.</p><table class="table"><thead><tr><th>Reference</th><th>Client</th><th>Status</th></tr></thead><tbody><tr><td>1808</td><td>Padel Point</td><td><span class="status draft">Example only</span></td></tr><tr><td>1806</td><td>Tribe Padel</td><td><span class="status warn">Pending approval (sample)</span></td></tr></tbody></table></div></section>
 <section class="section hide" id="reports"><div class="panel"><h2>Existing reports stay intact</h2><p>Continue using the live reporting tool while we develop secure online records and a reliable migration method.</p><a class="btn" style="display:inline-block;text-decoration:none" href="https://reports.urbancare.au/">Open existing reporting tool</a><p class="smallnote">On your GitHub Pages deployment this opens your existing report creator. It currently stores reports on each device.</p></div><div class="panel"><h2>Next integration</h2><p class="muted">Use the existing export-backup function to prepare for migration, then link saved reports to shared client IDs and job IDs in the future database. Do not overwrite browser data.</p></div></section>
-<section class="section hide" id="invoices"><div class="panel"><div class="heading"><div><h2>Invoice draft generator</h2><p class="muted">Review a sample before assigning any real invoice number</p></div><span class="status draft">Not issued</span></div><form id="invoiceForm"><div class="fields"><div class="field"><label for="invClient">Customer</label><select id="invClient"><option value="Padel Point">Padel Point</option><option value="Tribe Padel">Tribe Padel</option></select></div><div class="field"><label for="invDate">Proposed issue date</label><input id="invDate" type="date" value="2026-11-24"></div><div class="field"><label for="invService">Service</label><input id="invService" value="Padel court glass cleaning — internal and external"></div><div class="field"><label for="invRef">Quote / job reference</label><input id="invRef" value="Quote 1808"></div><div class="field"><label for="invQty">Quantity (courts)</label><input id="invQty" type="number" min="1" step="1" value="4"></div><div class="field"><label for="invRate">Rate per court (AUD)</label><input id="invRate" type="number" min="0" step="0.01" value="150"></div><div class="field"><label for="invSequence">Monthly sequence — preview only</label><input id="invSequence" type="number" min="1" step="1" value="1"></div><div class="field"><label for="invTerms">Payment terms (days)</label><input id="invTerms" type="number" min="0" value="14"></div></div><div class="toolbar no-print"><button class="btn" type="submit">Update invoice preview</button><button class="btn outline" type="button" id="printInvoice">Print / Save sample PDF</button></div></form></div>
-<div class="invoice" id="invoicePreview"><div class="invoice-meta"><div><img src="https://reports.urbancare.au/urbancare-wordmark.png" alt="URBANCARE" style="width:200px;max-width:100%"><div class="muted">EXTERIOR PROPERTY CARE</div><p class="smallnote">Lukasz Gawrych · ABN 54 638 762 202<br>service@urbancare.au · urbancare.au</p></div><div style="text-align:right"><div class="preview-label">SAMPLE · NOT ISSUED</div><h2>INVOICE</h2><div id="previewNumber"><b>11126</b></div><div class="smallnote" id="previewDates"></div></div></div><hr class="sep"><div class="invoice-meta"><div><div class="preview-label">Bill to</div><b id="previewClient">PADEL POINT PTY LTD</b><p class="smallnote" id="previewAddress">Unit 4/35 Starkie Dr, Bankstown Aerodrome NSW 2198</p></div><div><div class="preview-label">Reference</div><p id="previewRef">Quote 1808</p></div></div><hr class="sep"><table class="table"><thead><tr><th>Description</th><th>Qty</th><th>Rate</th><th style="text-align:right">Amount</th></tr></thead><tbody><tr><td id="previewService"></td><td id="previewQty"></td><td id="previewRate"></td><td id="previewAmount" style="text-align:right"></td></tr></tbody></table><p class="smallnote">GST not charged — URBANCARE is not registered for GST.</p><hr class="sep"><div class="amount" id="previewTotal">$600.00 AUD</div><hr class="sep"><div class="two"><div><b>Payment details</b><p class="smallnote">Bank name: [TO CONFIRM]<br>Account name: [TO CONFIRM]<br>BSB: [TO CONFIRM]<br>Account number: [TO CONFIRM]</p></div><div><b>Thank you</b><p class="smallnote">This is a layout preview only. Final invoices will use the approved URBANCARE invoice template, linked job records and centrally managed issue numbers.</p></div></div></div></section>
+<section class="section hide" id="invoices">
+<div class="panel no-print"><div class="heading"><div><h2>Editable invoice draft</h2><p class="muted">Prepare a draft for Padel Point, add extra items, and review the PDF and email before issue.</p></div><span class="status draft">Draft only</span></div>
+<p class="smallnote"><b>Privacy:</b> This development version saves the invoice draft only in this browser. It does not send email or create an Outlook draft automatically. Do not enter bank details or confidential customer information until secure login and storage are enabled.</p>
+<form id="invoiceForm">
+<div class="fields">
+<div class="field"><label for="invClient">Client (sample selection)</label><select id="invClient"><option value="Padel Point">Padel Point</option><option value="Tribe Padel">Tribe Padel</option></select></div>
+<div class="field"><label for="invBillTo">Billing entity — editable</label><input id="invBillTo" value="PADEL POINT PTY LTD"></div>
+<div class="field span"><label for="invAddress">Billing address — editable</label><input id="invAddress" value="Unit 4/35 Starkie Dr, Bankstown Aerodrome NSW 2198"></div>
+<div class="field"><label for="invDate">Proposed issue date</label><input id="invDate" type="date" value="2026-11-24"></div>
+<div class="field"><label for="invTerms">Payment terms (days) — confirm</label><input id="invTerms" type="number" min="0" value="14"></div>
+<div class="field"><label for="invSequence">Monthly sequence — proposed, not reserved</label><input id="invSequence" type="number" min="1" step="1" value="1"></div>
+<div class="field"><label for="invRef">Quote / job reference</label><input id="invRef" value="Quote 1808"></div>
+<div class="field"><label for="invServiceDate">Service date — confirm</label><input id="invServiceDate" type="date"></div>
+<div class="field"><label for="invReportRef">Service report reference</label><input id="invReportRef" placeholder="Add report number if available"></div>
+<div class="field span"><label for="invService">Line 1 — service description</label><input id="invService" value="Padel court glass cleaning — internal and external"></div>
+<div class="field"><label for="invQty">Line 1 quantity</label><input id="invQty" type="number" min="0" step="0.01" value="4"></div>
+<div class="field"><label for="invRate">Line 1 unit price (AUD)</label><input id="invRate" type="number" min="0" step="0.01" value="150"></div>
+<div class="field span"><label for="invExtraDesc">Optional additional line / adjustment</label><input id="invExtraDesc" placeholder="e.g. additional cage cleaning (leave blank if none)"></div>
+<div class="field"><label for="invExtraQty">Additional quantity</label><input id="invExtraQty" type="number" step="0.01" min="0" value="1"></div>
+<div class="field"><label for="invExtraRate">Additional unit price (AUD)</label><input id="invExtraRate" type="number" min="0" step="0.01" value="0"></div>
+<div class="field span"><label for="invNotes">Invoice notes (editable)</label><textarea id="invNotes" rows="3" placeholder="Additional job details or payment note"></textarea></div>
+<div class="field span"><label for="invPay">Bank transfer instructions — placeholder until confirmed</label><textarea id="invPay" rows="3">Bank name: [TO CONFIRM]\nAccount name: [TO CONFIRM]\nBSB: [TO CONFIRM]\nAccount number: [TO CONFIRM]</textarea></div>
+</div>
+<div class="toolbar"><button class="btn" type="submit">Update preview</button><button class="btn outline" type="button" id="saveInvoice">Save draft on this device</button><button class="btn outline" type="button" id="printInvoice">Print / Save sample PDF</button></div>
+<div class="muted" id="invoiceSaveStatus" role="status">Unsaved draft. Figures are examples until you verify actual work and agreed price.</div>
+</form></div>
+<div class="invoice" id="invoicePreview">
+<div class="invoice-meta"><div><img src="https://reports.urbancare.au/urbancare-wordmark.png" alt="URBANCARE" style="width:200px;max-width:100%"><div class="muted">EXTERIOR PROPERTY CARE</div><p class="smallnote">Lukasz Gawrych · ABN 54 638 762 202<br>service@urbancare.au · urbancare.au</p></div>
+<div style="text-align:right"><div class="preview-label">DRAFT SAMPLE · NOT ISSUED</div><h2>INVOICE</h2><b id="previewNumber">11126</b><div class="smallnote" id="previewDates"></div></div></div><hr class="sep">
+<div class="invoice-meta"><div><div class="preview-label">Bill to</div><b id="previewClient"></b><p class="smallnote" id="previewAddress"></p></div><div><div class="preview-label">References</div><p id="previewRef"></p><p id="previewServiceDate" class="smallnote"></p></div></div><hr class="sep">
+<table class="table"><thead><tr><th>Description</th><th>Qty</th><th>Rate</th><th style="text-align:right">Amount</th></tr></thead><tbody><tr><td id="previewService"></td><td id="previewQty"></td><td id="previewRate"></td><td id="previewAmount" style="text-align:right"></td></tr><tr id="previewExtraRow" class="hide"><td id="previewExtraDesc"></td><td id="previewExtraQty"></td><td id="previewExtraRate"></td><td id="previewExtraAmount" style="text-align:right"></td></tr></tbody></table><p class="smallnote">GST not charged — URBANCARE is not registered for GST.</p><hr class="sep"><div class="amount" id="previewTotal"></div><hr class="sep"><div class="two"><div><b>Payment details</b><p class="smallnote" style="white-space:pre-line" id="previewPay"></p></div><div><b>Notes</b><p class="smallnote" style="white-space:pre-line" id="previewNotes"></p></div></div><p class="smallnote" style="margin-top:22px">Draft only. Confirm the billed service, customer, price, payment details and final invoice design before issue.</p></div>
+<div class="panel no-print"><div class="heading"><h2>Outlook email — editable preview</h2><span class="status draft">Not sent</span></div>
+<div class="fields"><div class="field"><label for="mailTo">Recipient — confirm before Outlook draft</label><input id="mailTo" type="email" placeholder="Enter confirmed billing email"></div><div class="field"><label for="mailSubject">Subject</label><input id="mailSubject"></div><div class="field span"><label for="mailBody">Email body</label><textarea id="mailBody" rows="8"></textarea></div></div>
+<div class="toolbar"><button class="btn outline" id="fillEmail" type="button">Generate email from invoice</button><button class="btn outline" id="copyEmail" type="button">Copy email text</button></div>
+<p class="smallnote">Automatic Outlook Drafts and PDF attachment will be connected after secure Microsoft account authorisation. For the first invoice, we can prepare the actual Outlook draft here after you upload the approved PDF. Nothing will be emailed without your confirmation.</p>
+</div></section>
 <section class="section hide" id="payments"><div class="panel"><h2>Payment tracking</h2><p class="muted">Planned statuses: draft, sent, partially paid, paid and overdue. Payment entries will be stored securely and linked to invoices after backend integration.</p><div class="empty">No real payment records in this preview.</div></div></section>
 <section class="section hide" id="settings"><div class="panel"><h2>Business settings</h2><div class="fields"><div class="field"><label>Business</label><input value="URBANCARE Exterior Property Care" disabled></div><div class="field"><label>ABN</label><input value="54 638 762 202" disabled></div><div class="field"><label>Outgoing email</label><input value="service@urbancare.au" disabled></div><div class="field"><label>GST setting</label><input value="Not registered for GST (verify before launch)" disabled></div><div class="field span"><label>Invoice number</label><input value="Sequence + MM + YY (e.g. 11126), assigned on issue" disabled></div></div><p class="smallnote">Bank information and email credentials must be stored securely in the future backend; do not commit secrets to GitHub.</p></div></section>
 </main></div><script>
@@ -29,6 +63,56 @@ const $=id=>document.getElementById(id); const aud=v=>new Intl.NumberFormat('en-
 document.querySelectorAll('[data-page]').forEach(b=>b.addEventListener('click',()=>{const page=b.dataset.page;document.querySelectorAll('[data-page]').forEach(x=>x.classList.toggle('active',x===b));document.querySelectorAll('.section').forEach(x=>x.classList.toggle('hide',x.id!==page));$('pageTitle').textContent=pages[page][0];$('pageSubtitle').textContent=pages[page][1];window.scrollTo(0,0)}));
 function updateClients(){const search=$('clientSearch').value.toLowerCase();$('clientRows').innerHTML=Object.entries(customers).filter(([k,v])=>(k+' '+v.contact+' '+v.site).toLowerCase().includes(search)).map(([k,v])=>'<tr><td><b>'+v.name+'</b></td><td>'+v.contact+'</td><td>'+v.site+'</td></tr>').join('')||'<tr><td colspan="3">No matches</td></tr>';}
 $('clientSearch').oninput=updateClients;updateClients();
-function updateInvoice(e){if(e)e.preventDefault();let d=$('invDate').value;if(!/^\d{4}-\d{2}-\d{2}$/.test(d)){alert('Choose an issue date');return}let [y,m,day]=d.split('-').map(Number), issue=new Date(Date.UTC(y,m-1,day));if(issue.getUTCFullYear()!==y||issue.getUTCMonth()!==m-1||issue.getUTCDate()!==day){alert('Invalid issue date');return}let sequence=Number($('invSequence').value),qty=Number($('invQty').value),rate=Number($('invRate').value),terms=Number($('invTerms').value);if(!Number.isInteger(sequence)||sequence<1||!Number.isInteger(qty)||qty<1||!Number.isFinite(rate)||rate<0||!Number.isInteger(terms)||terms<0){alert('Check quantity, price, payment terms and sequence');return}const number=String(sequence)+String(m).padStart(2,'0')+String(y).slice(-2),due=new Date(issue.getTime()+terms*86400000),client=customers[$('invClient').value];$('previewNumber').textContent=number;$('previewDates').textContent='Issue: '+dateStr(issue)+' · Due: '+dateStr(due);$('previewClient').textContent=client.name;$('previewAddress').textContent=client.site;$('previewRef').textContent=$('invRef').value;$('previewService').textContent=$('invService').value;$('previewQty').textContent=qty;$('previewRate').textContent=aud(rate);$('previewAmount').textContent=aud(qty*rate);$('previewTotal').textContent=aud(qty*rate)+' AUD';}
-$('invoiceForm').onsubmit=updateInvoice;$('printInvoice').onclick=()=>{updateInvoice();window.print()};updateInvoice();
+const INV_FIELDS=['invClient','invBillTo','invAddress','invDate','invTerms','invSequence','invRef','invServiceDate','invReportRef','invService','invQty','invRate','invExtraDesc','invExtraQty','invExtraRate','invNotes','invPay','mailTo','mailSubject','mailBody'];
+const INV_KEY='urbancare-bpl-invoice-draft-v1';
+function updateInvoice(e){
+ if(e)e.preventDefault();
+ const date=$('invDate').value;
+ if(!/^\d{4}-\d{2}-\d{2}$/.test(date)){alert('Choose a valid invoice date');return false}
+ const [year,month,day]=date.split('-').map(Number);
+ const issue=new Date(Date.UTC(year,month-1,day));
+ if(issue.getUTCFullYear()!==year||issue.getUTCMonth()!==month-1||issue.getUTCDate()!==day){alert('Choose a valid invoice date');return false}
+ const seq=Number($('invSequence').value),terms=Number($('invTerms').value),qty=Number($('invQty').value),rate=Number($('invRate').value);
+ const extraQty=Number($('invExtraQty').value),extraRate=Number($('invExtraRate').value);
+ if(!Number.isInteger(seq)||seq<1||!Number.isInteger(terms)||terms<0||![qty,rate,extraQty,extraRate].every(x=>Number.isFinite(x)&&x>=0)){alert('Check invoice quantities, rates and terms');return false}
+ const due=new Date(issue.getTime()+terms*86400000);
+ const amount=Math.round(qty*rate*100)/100;
+ const hasExtra=!!$('invExtraDesc').value.trim();
+ const extra=Math.round(extraQty*extraRate*100)/100;
+ const invoiceNo=String(seq)+String(month).padStart(2,'0')+String(year).slice(-2);
+ $('previewNumber').textContent=invoiceNo+' (proposed)';
+ $('previewDates').textContent='Issue: '+dateStr(issue)+' · Due: '+dateStr(due);
+ $('previewClient').textContent=$('invBillTo').value;
+ $('previewAddress').textContent=$('invAddress').value;
+ $('previewRef').textContent=[$('invRef').value,$('invReportRef').value].filter(Boolean).join(' · ');
+ $('previewServiceDate').textContent=$('invServiceDate').value?'Service date: '+$('invServiceDate').value:'Service date: [TO CONFIRM]';
+ $('previewService').textContent=$('invService').value;
+ $('previewQty').textContent=qty;$('previewRate').textContent=aud(rate);$('previewAmount').textContent=aud(amount);
+ $('previewExtraRow').classList.toggle('hide',!hasExtra);
+ $('previewExtraDesc').textContent=$('invExtraDesc').value;$('previewExtraQty').textContent=extraQty;$('previewExtraRate').textContent=aud(extraRate);$('previewExtraAmount').textContent=aud(extra);
+ $('previewTotal').textContent=aud(amount+(hasExtra?extra:0))+' AUD';
+ $('previewPay').textContent=$('invPay').value;
+ $('previewNotes').textContent=$('invNotes').value||'Thank you for choosing URBANCARE.';
+ return true;
+}
+function generateInvoiceEmail(){
+ if(!updateInvoice())return;
+ $('mailSubject').value='URBANCARE Invoice '+$('previewNumber').textContent.replace(' (proposed)','')+' — '+$('invBillTo').value;
+ $('mailBody').value='Hi,\n\nThank you for choosing URBANCARE.\n\nPlease find the invoice for '+$('invService').value+'.\n\nInvoice reference: '+$('previewNumber').textContent.replace(' (proposed)','')+'\nTotal: '+$('previewTotal').textContent+'\nPayment due: '+$('previewDates').textContent.split('Due: ')[1]+'\n\nPlease let me know if you have any questions.\n\nLukasz\nURBANCARE Exterior Property Care';
+ $('invoiceSaveStatus').textContent='Email preview generated. No Outlook draft has been created.';
+}
+function saveInvoice(){
+ if(!updateInvoice())return;
+ const record={};for(const id of INV_FIELDS)record[id]=$(id).value;
+ try{localStorage.setItem(INV_KEY,JSON.stringify(record));$('invoiceSaveStatus').textContent='Draft saved in this browser only. Not issued or emailed.';}
+ catch(e){$('invoiceSaveStatus').textContent='Browser storage failed. Copy details before leaving.';}
+}
+function loadInvoice(){try{const record=JSON.parse(localStorage.getItem(INV_KEY)||'null');if(record&&typeof record==='object')for(const id of INV_FIELDS){if(typeof record[id]==='string'&&$(id))$(id).value=record[id];}}catch(e){}updateInvoice();}
+$('invClient').addEventListener('change',()=>{const c=customers[$('invClient').value];$('invBillTo').value=c.name;$('invAddress').value=c.site;updateInvoice()});
+$('invoiceForm').onsubmit=updateInvoice;
+$('saveInvoice').onclick=saveInvoice;
+$('printInvoice').onclick=()=>{if(updateInvoice())window.print()};
+$('fillEmail').onclick=generateInvoiceEmail;
+$('copyEmail').onclick=()=>{const content='To: '+$('mailTo').value+'\nSubject: '+$('mailSubject').value+'\n\n'+$('mailBody').value;if(navigator.clipboard&&window.isSecureContext){navigator.clipboard.writeText(content).then(()=>{$('invoiceSaveStatus').textContent='Email text copied.'}).catch(()=>alert('Copy failed; select the email text manually.'));}else alert('Clipboard unavailable. Select the email text manually.')};
+loadInvoice();
 </script></body></html>
