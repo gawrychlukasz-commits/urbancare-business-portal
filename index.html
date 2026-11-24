@@ -178,6 +178,30 @@
 .quote-variation-summary{background:#edf2ec;padding:11px 15px;margin:4px 0 13px;border-radius:7px;color:#264831}
 .quote-variation-summary strong{font-size:11px}
 .quote-variation-summary p{font-size:10px;white-space:pre-line;line-height:1.55;margin:5px 0 0}
+
+/* Standard variation PDF matches URBANCARE's one-page Quote 1808 design.
+   Changes are scoped to variation previews only; regular quote styling stays intact. */
+.quote-sheet.quote-sheet-variation{min-height:970px}
+.quote-sheet-variation .quote-top{min-height:106px}
+.quote-sheet-variation .quote-to #qpParentReference{margin-top:5px;color:#425249}
+.quote-sheet-variation .quote-content{grid-template-columns:1.2fr 0.94fr;gap:24px}
+.quote-sheet-variation .quote-variation-copy h2{font-size:20px;margin-bottom:11px}
+.quote-sheet-variation .quote-variation-copy h3{font-size:11px;margin:14px 0 6px;font-weight:750}
+.quote-sheet-variation .quote-variation-copy p{font-size:10.5px;line-height:1.5}
+.quote-sheet-variation .quote-variation-copy .quote-option{padding:9px 0;border-top:1px solid #aab6ab}
+.quote-sheet-variation .quote-variation-copy .quote-selected{border-radius:5px;margin:8px 0 8px;padding:12px 10px}
+.quote-sheet-variation .quote-variation-copy .quote-selected span{font-size:10px}
+.quote-sheet-variation .quote-picture{justify-content:flex-start}
+.quote-sheet-variation .quote-picture img{max-height:440px}
+.quote-sheet-variation .quote-picture small{text-align:center}
+.quote-sheet-variation .quote-foot{border-top:1px solid #c8cec8;padding-top:20px}
+.quote-sheet-variation .quote-draft{margin-top:18px}
+@media print{
+ body.print-quote .quote-sheet-variation .quote-content{grid-template-columns:1.2fr .94fr!important;gap:7mm!important}
+ body.print-quote .quote-sheet-variation .quote-picture img{max-height:135mm!important}
+ body.print-quote .quote-sheet-variation .quote-variation-copy h3{margin-top:3.7mm!important}
+ body.print-quote .quote-sheet-variation .quote-foot{padding-top:5mm!important}
+}
 </style></head><body class="auth-locked">
 <section id="authGate" aria-label="URBANCARE private login"><div class="auth-card">
 <img src="https://reports.urbancare.au/urbancare-wordmark.png" alt="URBANCARE">
@@ -272,10 +296,10 @@
 <div class="quote-sheet" id="quotePreview">
 <div class="quote-top"><div><img src="https://reports.urbancare.au/urbancare-wordmark.png" alt="URBANCARE" class="quote-logo"><div class="quote-brand-sub">EXTERIOR PROPERTY CARE<br>Lukasz Gawrych | ABN 54 638 762 202<br>urbancare.au | service@urbancare.au</div></div><div class="quote-head-right"><strong id="qpNumber">QUOTE — DRAFT</strong><div id="qpDates"></div></div></div>
 <div class="quote-rule"></div>
-<div class="quote-to"><div class="quote-kicker">To:</div><strong id="qpClient"></strong><div id="qpAddress"></div><div id="qpContact"></div></div>
+<div class="quote-to"><div class="quote-kicker">To:</div><strong id="qpClient"></strong><div id="qpAddress"></div><div id="qpContact"></div><div id="qpParentReference" class="hide"></div></div>
 <div class="quote-rule"></div>
 <div id="qpVariation" class="quote-variation-summary hide"><strong id="qpVariationLabel">VARIATION</strong><p id="qpVariationTerms"></p></div>
-<div class="quote-content"><div class="quote-copy">
+<div class="quote-content"><div class="quote-copy" id="qpRegularCopy">
 <h2 id="qpTitle">Service quotation</h2><p id="qpScope"></p><p id="qpMethod"></p>
 <h3>Not included</h3><p id="qpExclusions"></p>
 <h3>Service options</h3>
@@ -285,8 +309,19 @@
 <div class="quote-selected"><span id="qpTotalLabel">Selected quote total</span><strong id="qpSelectedAmount"></strong></div><p class="quote-tax">GST not charged. URBANCARE is not registered for GST.</p>
 <h3>Arrangements</h3><p id="qpArrangements"></p>
 <p id="qpExtras"></p></div>
-<div class="quote-picture"><img id="qpImage" alt="Site scope reference" class="hide"><p id="qpImagePlaceholder">Site photo / marked scope image can be added to this quotation.</p><small>Site image for reference only; confirm scope before acceptance.</small></div></div>
-<div class="quote-foot"><div><strong>Thank you,</strong><p>Lukasz Gawrych<br>Owner &amp; Operator</p></div><div><strong>Accept the quote</strong><p>Reply in writing with the quote number, agreed scope and selected price. Service dates arranged after acceptance.</p></div></div>
+<div class="quote-copy quote-variation-copy hide" id="qpVariationCopy">
+<h2 id="qpVariationTitle">Fortnightly Glass Maintenance</h2>
+<p id="qpVariationScope"></p>
+<h3>Inspection and selection</h3><p id="qpVariationCoverage"></p>
+<h3>Frequency &amp; pricing</h3>
+<div class="quote-option"><span id="qpVariationFrequency">Maintenance service visit</span><strong id="qpVariationRate"></strong></div>
+<div class="quote-selected"><span id="qpVariationPriceLabel">PRICE PER VISIT</span><strong id="qpVariationPrice"></strong></div>
+<h3>Not included</h3><p id="qpVariationExclusions"></p>
+<h3>Service arrangements</h3><p id="qpVariationArrangements"></p>
+<h3>Cancellation and variations</h3><p id="qpVariationCancellation"></p>
+</div>
+<div class="quote-picture"><img id="qpImage" alt="Site scope reference" class="hide"><p id="qpImagePlaceholder">Site photo / marked scope image can be added to this quotation.</p><small id="qpImageCaption">Site image for reference only; confirm scope before acceptance.</small></div></div>
+<div class="quote-foot"><div><strong>Thank you,</strong><p>Lukasz Gawrych<br>Owner &amp; Operator</p></div><div><strong id="qpAcceptanceTitle">Accept the quote</strong><p id="qpAcceptanceText">Reply in writing with the quote number, agreed scope and selected price. Service dates arranged after acceptance.</p></div></div>
 <div class="quote-draft">PREPARED FOR REVIEW — QUOTATION NOT YET ISSUED</div>
 </div></section>
 <section class="section hide" id="reports"><div class="panel"><h2>Existing reports stay intact</h2><p>Continue using the live reporting tool while we develop secure online records and a reliable migration method.</p><a class="btn" style="display:inline-block;text-decoration:none" href="https://reports.urbancare.au/">Open existing reporting tool</a><p class="smallnote">On your GitHub Pages deployment this opens your existing report creator. It currently stores reports on each device.</p></div><div class="panel"><h2>Next integration</h2><p class="muted">Use the existing export-backup function to prepare for migration, then link saved reports to shared client IDs and job IDs in the future database. Do not overwrite browser data.</p></div></section>
@@ -821,7 +856,7 @@ async function loadStoredQuoteImage(path){
 function refreshQuotePreview(){
  const d=qValues();
  const c=clientRecords.find(x=>x.id===$('qClient').value);
- $('qpNumber').textContent=d.qNumber?'Quote '+d.qNumber:'QUOTE — DRAFT';
+ $('qpNumber').textContent=d.qNumber?(activeQuoteKind==='variation'?'Variation ':'Quote ')+d.qNumber:'QUOTE — DRAFT';
  const date=d.qDate?new Date(d.qDate+'T12:00:00'):null;
  $('qpDates').textContent=(date&&!isNaN(date.getTime())?date.toLocaleDateString('en-AU',{day:'numeric',month:'long',year:'numeric'}):'Date: to confirm')+
    '\nValid for '+(d.qValidity||'—')+' days';
@@ -845,7 +880,25 @@ function refreshQuotePreview(){
  $('qVariationDetails').hidden=!variation;
  const sourceQuote=quoteRecords.find(x=>x.id===activeQuoteSourceId);
  $('qParentLabel').textContent=sourceQuote?.quote_number||'original quote';
- $('qpVariation').classList.toggle('hide',!variation);
+ $('qpVariation').classList.add('hide');
+ $('quotePreview').classList.toggle('quote-sheet-variation',variation);
+ $('qpRegularCopy').classList.toggle('hide',variation);
+ $('qpVariationCopy').classList.toggle('hide',!variation);
+ $('qpParentReference').classList.toggle('hide',!variation);
+ $('qpParentReference').textContent=variation?'Reference: Approved Quote '+(sourceQuote?.quote_number||'—')+' | Variation '+(d.qNumber||'—'):'';
+ $('qpVariationTitle').textContent=d.qTitle||'Service Scope Variation';
+ $('qpVariationScope').textContent=d.qChangeSummary||d.qScope||'Changes from the original quote to be confirmed.';
+ $('qpVariationCoverage').textContent=d.qCoverage||'Minimum coverage and selection criteria must be agreed before commencement.';
+ $('qpVariationFrequency').textContent=d.qFrequency?d.qFrequency+' maintenance visit':'Service visit (frequency to confirm)';
+ $('qpVariationRate').textContent=aud(quoteTotal(d));
+ $('qpVariationPrice').textContent=aud(quoteTotal(d))+' AUD';
+ $('qpVariationPriceLabel').textContent=d.qFrequency==='One-off'?'VARIATION TOTAL':'PRICE PER VISIT';
+ $('qpVariationExclusions').textContent=d.qExclusions||'Exclusions to be confirmed; other original quote exclusions remain unchanged unless agreed.';
+ $('qpVariationArrangements').textContent=[d.qStartDate?'Proposed start: '+d.qStartDate:'Start date to be agreed.',d.qArrangements||'Court access, water supply, working hours and service timing to be confirmed.',d.qExtras||''].filter(Boolean).join('\n');
+ $('qpVariationCancellation').textContent=[d.qTermination||'Cancellation terms require written agreement.','All other applicable original quote terms remain unchanged unless expressly varied.'].join('\n');
+ $('qpAcceptanceTitle').textContent=variation?'Accept the variation':'Accept the quote';
+ $('qpAcceptanceText').textContent=variation?'Please confirm approval of variation '+(d.qNumber||'—')+', the price and frequency, defined scope and cancellation terms in writing before the changed service begins.':'Reply in writing with the quote number, agreed scope and selected price. Service dates arranged after acceptance.';
+ $('qpImageCaption').textContent=variation?'Scope illustration from the original quotation or new site photograph; confirm selected areas before commencement.':'Site image for reference only; confirm scope before acceptance.';
  $('qpTotalLabel').textContent=variation && d.qFrequency && d.qFrequency!=='One-off'?'Price per service visit':'Selected quote total';
  $('qpVariationLabel').textContent='VARIATION TO QUOTE '+(sourceQuote?.quote_number||'—');
  $('qpVariationTerms').textContent=variation?[
@@ -865,7 +918,8 @@ function refreshQuotePreview(){
  $('qSave').disabled=!!q&&q.status!=='draft';
  $('qSave').textContent=q?.status==='draft'?'Save quote draft online':'Save quote draft online';
  $('quotePreview').querySelector('.quote-draft').textContent=
-   q?.status&&q.status!=='draft'?'QUOTE STATUS: '+q.status.toUpperCase()+' — Check before reusing.':
+   q?.status&&q.status!=='draft'?(variation?'VARIATION':'QUOTE')+' STATUS: '+q.status.toUpperCase()+' — Retain the original record.':
+   variation?'URBANCARE | VARIATION '+(d.qNumber||'—')+' | DRAFT — NOT FOR ACCEPTANCE':
    'PREPARED FOR REVIEW — QUOTATION NOT YET ISSUED';
 }
 function renderQuoteRows(){
