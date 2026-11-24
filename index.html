@@ -214,6 +214,7 @@
 #clientRows .client-unverified-row td:first-child{font-weight:750}
 #clientRows .client-verify-button{background:#b52b2b;border-color:#b52b2b;color:#fff;font-size:12px;letter-spacing:.04em}
 #clientRows .client-verify-button:hover{background:#942020}
+#clientRows .client-verified-label{display:inline-flex;align-items:center;padding:7px 10px;background:#e2f2e5;border:1px solid #a2d3ad;border-radius:7px;color:#206839;font-size:11px;font-weight:750;letter-spacing:.025em;white-space:nowrap}
 .client-verify-label{display:flex;gap:9px;align-items:flex-start;font-weight:700;color:#9a2323}
 .client-verify-label input{margin-top:3px}
 </style></head><body class="auth-locked">
@@ -473,6 +474,10 @@ function renderClients(){
     const verify=document.createElement('button');
     verify.type='button';verify.className='btn small client-verify-button';verify.textContent='VERIFY';
     verify.addEventListener('click',()=>editClient(c.id,true));actions.appendChild(verify);
+  }else if(!needsVerification){
+    const verified=document.createElement('span');verified.className='client-verified-label';
+    verified.textContent='VERIFIED';verified.setAttribute('aria-label','Client details verified');
+    actions.appendChild(verified);
   }
   const edit=document.createElement('button');edit.type='button';edit.className='btn outline small';edit.textContent='Edit';edit.addEventListener('click',()=>editClient(c.id));actions.appendChild(edit);
   const action=document.createElement('button');action.type='button';action.className='btn outline small';
