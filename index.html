@@ -170,6 +170,14 @@
 
 /* Approved quotes are visually distinct in the quote register. */
 #quotesRows select.quote-status-approved{background:#e1f3e5;color:#176b33;border:1px solid #7dc792;border-radius:7px;padding:7px 10px;font-weight:750}
+
+#qVariationDetails[hidden]{display:none!important}
+.quote-variation-banner{background:#edf2ec;border-left:4px solid #476f50;padding:13px 15px;border-radius:6px;margin-bottom:13px;color:#254632}
+.quote-variation-banner strong{font-size:13px}
+.quote-variation-banner p{font-size:12px;color:#546a57;margin:5px 0 0}
+.quote-variation-summary{background:#edf2ec;padding:11px 15px;margin:4px 0 13px;border-radius:7px;color:#264831}
+.quote-variation-summary strong{font-size:11px}
+.quote-variation-summary p{font-size:10px;white-space:pre-line;line-height:1.55;margin:5px 0 0}
 </style></head><body class="auth-locked">
 <section id="authGate" aria-label="URBANCARE private login"><div class="auth-card">
 <img src="https://reports.urbancare.au/urbancare-wordmark.png" alt="URBANCARE">
@@ -234,6 +242,16 @@
 <div class="field"><label for="qNumber">Quote number (unique, optional for draft)</label><input id="qNumber" maxlength="50" placeholder="Enter next unused number"></div>
 <div class="field"><label for="qDate">Quote date *</label><input type="date" id="qDate" required></div>
 <div class="field"><label for="qValidity">Valid for (days)</label><input type="number" id="qValidity" value="60" min="1" max="365"></div>
+<div class="field span" id="qVariationDetails" hidden>
+<div class="quote-variation-banner"><strong>Variation to <span id="qParentLabel">existing approved quote</span></strong><p>Document the changed scope and service terms. The original quote stays unchanged. This variation requires separate customer acceptance.</p></div>
+<div class="fields">
+<div class="field"><label for="qFrequency">Service frequency *</label><select id="qFrequency"><option value="">— Select frequency —</option><option value="One-off">One-off</option><option value="Weekly">Weekly</option><option value="Fortnightly">Fortnightly (every 2 weeks)</option><option value="Monthly">Monthly</option><option value="Other">Other (describe in scope)</option></select></div>
+<div class="field"><label for="qStartDate">Proposed start date</label><input id="qStartDate" type="date"></div>
+<div class="field span"><label for="qChangeSummary">What changes from the original? *</label><textarea id="qChangeSummary" rows="3" placeholder="Describe which services or areas have changed and what stays the same."></textarea></div>
+<div class="field span"><label for="qCoverage">Minimum coverage / selection criteria</label><textarea id="qCoverage" rows="2" placeholder="e.g. URBANCARE assesses glass each visit and selects sections, with the minimum agreed areas specified."></textarea></div>
+<div class="field span"><label for="qTermination">Cancellation or termination terms *</label><textarea id="qTermination" rows="2" placeholder="Specify the agreed notice period and how either party can end recurring visits."></textarea></div>
+</div><p class="smallnote">Use Custom total for the agreed price <strong>per visit</strong> when service is recurring. A variation is not approved until the client separately agrees.</p>
+</div>
 <div class="field span"><label for="qTitle">Service title</label><input id="qTitle" placeholder="e.g. Padel Court Glass Cleaning"></div>
 <div class="field span"><label for="qScope">Scope of work *</label><textarea id="qScope" rows="4" required placeholder="Describe exactly what will be cleaned and included"></textarea></div>
 <div class="field span"><label for="qMethod">Cleaning method / frequency</label><input id="qMethod" placeholder="e.g. wash and squeegee | once per month"></div>
@@ -248,7 +266,7 @@
 <div class="field span"><label for="qArrangements">Arrangements — access, water, parking, timing</label><textarea id="qArrangements" rows="4" placeholder="Confirm arrangements with client"></textarea></div>
 <div class="field span"><label for="qImage">Site photograph / marked scope image (optional; JPG/PNG/WebP up to 10 MB)</label><input id="qImage" type="file" accept="image/jpeg,image/png,image/webp"></div>
 </div>
-<div class="toolbar"><button class="btn" type="submit" id="qSave">Save quote draft online</button><button class="btn outline" type="button" id="qNew">New quote</button><button class="btn outline" type="button" id="qPrint">Print / Save quote PDF</button></div>
+<div class="toolbar"><button class="btn" type="submit" id="qSave">Save quote draft online</button><button class="btn outline" type="button" id="qNew">New separate quote</button><button class="btn outline" type="button" id="qPrint">Print / Save quote PDF</button></div>
 <p id="qFormStatus" class="smallnote" role="status">Quotation number is not automatically reserved. Draft PDF is not issued or emailed.</p><p id="qRevisionLabel" class="smallnote"></p>
 </form></div>
 <div class="quote-sheet" id="quotePreview">
@@ -256,6 +274,7 @@
 <div class="quote-rule"></div>
 <div class="quote-to"><div class="quote-kicker">To:</div><strong id="qpClient"></strong><div id="qpAddress"></div><div id="qpContact"></div></div>
 <div class="quote-rule"></div>
+<div id="qpVariation" class="quote-variation-summary hide"><strong id="qpVariationLabel">VARIATION</strong><p id="qpVariationTerms"></p></div>
 <div class="quote-content"><div class="quote-copy">
 <h2 id="qpTitle">Service quotation</h2><p id="qpScope"></p><p id="qpMethod"></p>
 <h3>Not included</h3><p id="qpExclusions"></p>
@@ -263,7 +282,7 @@
 <div id="qpOption1" class="quote-option"><span id="qpOption1Label"></span><strong id="qpOption1Amount"></strong></div>
 <div id="qpOption2" class="quote-option"><span id="qpOption2Label"></span><strong id="qpOption2Amount"></strong></div>
 <div id="qpCustom" class="quote-option"><span>Agreed service total</span><strong id="qpCustomAmount"></strong></div>
-<div class="quote-selected"><span>Selected quote total</span><strong id="qpSelectedAmount"></strong></div><p class="quote-tax">GST not charged. URBANCARE is not registered for GST.</p>
+<div class="quote-selected"><span id="qpTotalLabel">Selected quote total</span><strong id="qpSelectedAmount"></strong></div><p class="quote-tax">GST not charged. URBANCARE is not registered for GST.</p>
 <h3>Arrangements</h3><p id="qpArrangements"></p>
 <p id="qpExtras"></p></div>
 <div class="quote-picture"><img id="qpImage" alt="Site scope reference" class="hide"><p id="qpImagePlaceholder">Site photo / marked scope image can be added to this quotation.</p><small>Site image for reference only; confirm scope before acceptance.</small></div></div>
@@ -753,8 +772,8 @@ $('fillEmail').onclick=generateInvoiceEmail;
 $('copyEmail').onclick=()=>{const content='To: '+$('mailTo').value+'\nSubject: '+$('mailSubject').value+'\n\n'+$('mailBody').value;if(navigator.clipboard&&window.isSecureContext){navigator.clipboard.writeText(content).then(()=>{$('invoiceSaveStatus').textContent='Email text copied.'}).catch(()=>alert('Copy failed; select the email text manually.'));}else alert('Clipboard unavailable. Select the email text manually.')};
 
 /* URBANCARE Quotes: editable drafts and owner-only quote register. */
-const Q_FIELDS=['qNumber','qDate','qValidity','qTitle','qScope','qMethod','qExclusions','qOption1','qPrice1','qOption2','qPrice2','qSelected','qCustomTotal','qExtras','qArrangements'];
-let quoteRecords=[],activeQuoteId=null,activeQuoteImagePath=null,previewQuoteImageUrl=null,activeQuoteSourceId=null;
+const Q_FIELDS=['qFrequency','qStartDate','qChangeSummary','qCoverage','qTermination','qNumber','qDate','qValidity','qTitle','qScope','qMethod','qExclusions','qOption1','qPrice1','qOption2','qPrice2','qSelected','qCustomTotal','qExtras','qArrangements'];
+let quoteRecords=[],activeQuoteId=null,activeQuoteImagePath=null,previewQuoteImageUrl=null,activeQuoteSourceId=null,activeQuoteKind='standard';
 const QUOTE_STATUSES=['draft','sent','approved','declined','cancelled','archived'];
 function initQuoteDate(){
  const now=new Date();const local=new Date(now.getTime()-now.getTimezoneOffset()*60000);
@@ -781,6 +800,7 @@ function refreshQuoteImportClients(){
 }
 function qValues(){
  const d={};for(const k of Q_FIELDS)d[k]=$(k).value;
+ d.quoteKind=activeQuoteKind;
  return d;
 }
 function quoteTotal(d){
@@ -821,12 +841,27 @@ function refreshQuotePreview(){
  $('qpOption2Amount').textContent=aud(Number(d.qPrice2)||0);
  $('qpCustomAmount').textContent=aud(Number(d.qCustomTotal)||0);
  $('qpSelectedAmount').textContent=aud(quoteTotal(d));
+ const variation=activeQuoteKind==='variation';
+ $('qVariationDetails').hidden=!variation;
+ const sourceQuote=quoteRecords.find(x=>x.id===activeQuoteSourceId);
+ $('qParentLabel').textContent=sourceQuote?.quote_number||'original quote';
+ $('qpVariation').classList.toggle('hide',!variation);
+ $('qpTotalLabel').textContent=variation && d.qFrequency && d.qFrequency!=='One-off'?'Price per service visit':'Selected quote total';
+ $('qpVariationLabel').textContent='VARIATION TO QUOTE '+(sourceQuote?.quote_number||'—');
+ $('qpVariationTerms').textContent=variation?[
+     d.qChangeSummary?'Changes: '+d.qChangeSummary:'',
+     d.qFrequency?'Frequency: '+d.qFrequency:'',
+     d.qStartDate?'Proposed start: '+d.qStartDate:'',
+     d.qCoverage?'Coverage: '+d.qCoverage:'',
+     d.qTermination?'Cancellation: '+d.qTermination:''
+   ].filter(Boolean).join('\n'):'';
+
  $('qpArrangements').textContent=d.qArrangements||'Access, water, parking, working hours and proposed date to be confirmed.';
  $('qpExtras').textContent=d.qExtras||'';
  const q=quoteRecords.find(q=>q.id===activeQuoteId);
- $('quoteFormTitle').textContent=activeQuoteId?'Edit quote '+(q?.quote_number||'(unnumbered)'):activeQuoteSourceId?'New revised quotation':'New quotation';
+ $('quoteFormTitle').textContent=activeQuoteId?'Edit '+(activeQuoteKind==='variation'?'variation ':'quote ')+(q?.quote_number||'(unnumbered)'):activeQuoteKind==='variation'?'New variation':activeQuoteSourceId?'New revised quotation':'New quotation';
  const source=quoteRecords.find(x=>x.id===activeQuoteSourceId);
- $('qRevisionLabel').textContent=source?'Based on original quote '+(source.quote_number||'(unnumbered)')+'. Give this revision a different number. The original remains unchanged.':'';
+ $('qRevisionLabel').textContent=source?(activeQuoteKind==='variation'?'Variation of quote ':'Revision of quote ')+(source.quote_number||'(unnumbered)')+'. This is a separate draft requiring client acceptance; the original remains unchanged.':'';
  $('qSave').disabled=!!q&&q.status!=='draft';
  $('qSave').textContent=q?.status==='draft'?'Save quote draft online':'Save quote draft online';
  $('quotePreview').querySelector('.quote-draft').textContent=
@@ -858,6 +893,12 @@ function renderQuoteRows(){
   const actionTd=document.createElement('td'),open=document.createElement('button');
   open.className='btn outline small';open.type='button';open.textContent='Open';
   open.addEventListener('click',()=>openQuote(q.id));actionTd.appendChild(open);
+  if(q.quote_number){
+    const variationBtn=document.createElement('button');variationBtn.type='button';variationBtn.className='btn outline small';
+    variationBtn.style.marginLeft='6px';variationBtn.textContent='Create Variation';
+    variationBtn.addEventListener('click',()=>createQuoteVariation(q.id));
+    actionTd.appendChild(variationBtn);
+  }
   const dup=document.createElement('button');dup.type='button';dup.className='btn outline small';
   dup.style.marginLeft='6px';dup.textContent='Duplicate / Revise';
   dup.addEventListener('click',()=>duplicateQuote(q.id));actionTd.appendChild(dup);
@@ -888,7 +929,7 @@ async function loadQuotes(){
 }
 function newQuote(){
  if(!confirm('Start a new quote? Save your current changes first.'))return;
- activeQuoteId=null;activeQuoteImagePath=null;activeQuoteSourceId=null;previewQuoteImageUrl=null;
+ activeQuoteId=null;activeQuoteImagePath=null;activeQuoteSourceId=null;activeQuoteKind='standard';previewQuoteImageUrl=null;
  $('quoteForm').reset();initQuoteDate();refreshQuoteClientOptions();paintQuoteImage(null);
  $('qFormStatus').textContent='New unsaved quotation. No quote number is reserved.';
  refreshQuotePreview();
@@ -896,7 +937,7 @@ function newQuote(){
 async function openQuote(id){
  const q=quoteRecords.find(x=>x.id===id);if(!q)return;
  if(!confirm('Open saved quote? This replaces unsaved quote form changes.'))return;
- activeQuoteId=id;activeQuoteImagePath=q.image_path||null;activeQuoteSourceId=q.source_quote_id||null;
+ activeQuoteId=id;activeQuoteImagePath=q.image_path||null;activeQuoteSourceId=q.source_quote_id||null;activeQuoteKind=q.quote_data?.quoteKind==='variation'?'variation':q.quote_data?.quoteKind==='revision'?'revision':'standard';
  const d=q.quote_data||{};
  for(const field of Q_FIELDS)$(field).value=typeof d[field]==='string'?d[field]:'';
  $('qNumber').value=q.quote_number||'';
@@ -919,6 +960,21 @@ async function saveQuote(event){
  const current=quoteRecords.find(q=>q.id===activeQuoteId);
  if(current&&current.status!=='draft')return alert('This quote has already left Draft status and cannot be edited in this form.');
  const quoteNo=d.qNumber.trim()||null;
+ if(activeQuoteKind==='variation'){
+   const parent=quoteRecords.find(x=>x.id===activeQuoteSourceId);
+   if(!parent?.quote_number)return alert('A variation needs a numbered original quote.');
+   if(!quoteNo||!/^.+-V[1-9][0-9]*$/.test(quoteNo)||!quoteNo.startsWith(parent.quote_number+'-V'))
+     return alert('Use a variation reference such as '+parent.quote_number+'-V1.');
+   if(!d.qChangeSummary.trim()||!d.qFrequency||!d.qTermination.trim()||!d.qScope.trim())
+     return alert('Complete the changed scope, frequency and cancellation terms.');
+   if(d.qSelected!=='custom'||!d.qCustomTotal.trim()||!Number.isFinite(Number(d.qCustomTotal)))
+     return alert('Select Custom total and enter the agreed per-visit or one-off variation price.');
+   if(d.qFrequency!=='One-off'&&!d.qCoverage.trim())
+     return alert('Define the areas or minimum coverage for recurring visits.');
+   if(quoteRecords.some(x=>x.id!==activeQuoteId&&x.quote_number===quoteNo))
+     return alert('Variation number already used. Choose the next available -V number.');
+ }
+
  const file=$('qImage').files[0];
  if(file&&(!['image/jpeg','image/png','image/webp'].includes(file.type)||file.size>10485760||file.size===0))
     return alert('Upload a JPG, PNG or WebP image smaller than 10 MB.');
@@ -954,11 +1010,12 @@ async function saveQuote(event){
 async function duplicateQuote(id){
  const source=quoteRecords.find(x=>x.id===id);if(!source)return;
  if(!confirm('Create a new draft based on '+(source.quote_number||'this quote')+'? The original will remain unchanged.'))return;
- activeQuoteId=null;activeQuoteSourceId=source.id;activeQuoteImagePath=source.image_path||null;
+ activeQuoteId=null;activeQuoteSourceId=source.id;activeQuoteImagePath=source.image_path||null;activeQuoteKind='revision';
  const d=source.quote_data||{};
  $('quoteForm').reset();initQuoteDate();
  for(const field of Q_FIELDS){if(field!=='qNumber'&&field!=='qDate'&&typeof d[field]==='string')$(field).value=d[field]}
  $('qNumber').value='';
+ $('qFrequency').value='';$('qStartDate').value='';$('qChangeSummary').value='';$('qCoverage').value='';$('qTermination').value='';
  refreshQuoteClientOptions();
  // Allow an inactive original client to appear, but do not change its status.
  const c=clientRecords.find(c=>c.id===source.client_id);
@@ -968,6 +1025,37 @@ async function duplicateQuote(id){
  if(source.image_path)await loadStoredQuoteImage(source.image_path);
  refreshQuotePreview();
  $('qFormStatus').textContent='New unsaved revision based on '+(source.quote_number||'unnumbered quote')+'. Assign a new unique quote number before issuing.';
+ $('quoteFormTitle').scrollIntoView({behavior:'smooth',block:'start'});
+}
+function createQuoteVariation(id){
+ const parent=quoteRecords.find(q=>q.id===id);
+ if(!parent?.quote_number)return alert('Save an original quote number first.');
+ if(!confirm('Create a separate variation to Quote '+parent.quote_number+'? The original scope, price and status will be preserved.'))return;
+ activeQuoteId=null;activeQuoteSourceId=parent.id;activeQuoteImagePath=parent.image_path||null;activeQuoteKind='variation';
+ $('quoteForm').reset();initQuoteDate();
+ const d=parent.quote_data||{};
+ $('qClient').value='';refreshQuoteClientOptions();
+ const c=clientRecords.find(x=>x.id===parent.client_id);
+ if(c&&!c.is_active)$('qClient').add(new Option(c.business_name+' (inactive)',c.id));
+ $('qClient').value=parent.client_id;
+ const prefix=parent.quote_number+'-V';
+ const used=quoteRecords.filter(q=>q.quote_number?.startsWith(prefix))
+    .map(q=>Number(q.quote_number.slice(prefix.length)))
+    .filter(n=>Number.isInteger(n)&&n>=1);
+ $('qNumber').value=prefix+(Math.max(0,...used)+1);
+ $('qTitle').value=(d.qTitle||'Service')+' — Scope Variation';
+ $('qScope').value='';
+ $('qChangeSummary').value='';
+ $('qCoverage').value='';
+ $('qFrequency').value='';
+ $('qTermination').value='';
+ $('qSelected').value='custom';$('qCustomTotal').value='';
+ $('qOption1').value='';$('qOption2').value='';$('qPrice1').value='0';$('qPrice2').value='0';
+ $('qValidity').value='60';
+ $('qImage').value='';paintQuoteImage(null);
+ if(parent.image_path)void loadStoredQuoteImage(parent.image_path);
+ refreshQuotePreview();
+ $('qFormStatus').textContent='Variation draft '+$('qNumber').value+'. Enter the new scope, price, frequency and cancellation terms. Client acceptance is required separately.';
  $('quoteFormTitle').scrollIntoView({behavior:'smooth',block:'start'});
 }
 function prepareQuotePdfAttachment(q){
