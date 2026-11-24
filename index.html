@@ -207,6 +207,15 @@
 #quotesRows tr.quote-test-row{background:#f1f2f2;color:#64716b}
 #quotesRows tr.quote-test-row td{border-top-color:#d9ded9}
 #quotesRows select.quote-status-test{background:#e7e9e8;color:#4c5952;border:1px solid #aab4ad;border-radius:7px;padding:7px 10px;font-weight:750}
+
+/* Automatically imported clients remain active but visibly require human review. */
+#clientRows .client-unverified-row{background:#fff0ef;color:#722b2a}
+#clientRows .client-unverified-row td{border-bottom-color:#e9c8c5}
+#clientRows .client-unverified-row td:first-child{font-weight:750}
+#clientRows .client-verify-button{background:#b52b2b;border-color:#b52b2b;color:#fff;font-size:12px;letter-spacing:.04em}
+#clientRows .client-verify-button:hover{background:#942020}
+.client-verify-label{display:flex;gap:9px;align-items:flex-start;font-weight:700;color:#9a2323}
+.client-verify-label input{margin-top:3px}
 </style></head><body class="auth-locked">
 <section id="authGate" aria-label="URBANCARE private login"><div class="auth-card">
 <img src="https://reports.urbancare.au/urbancare-wordmark.png" alt="URBANCARE">
@@ -243,6 +252,7 @@
 <div class="field span"><label for="clientSite">Site address</label><input id="clientSite"></div>
 <div class="field span"><label for="clientBilling">Billing address</label><input id="clientBilling"></div>
 <div class="field span"><label for="clientNotes">Internal notes</label><textarea id="clientNotes" rows="2"></textarea></div>
+<div class="field span hide" id="clientVerificationBox"><label class="client-verify-label"><input type="checkbox" id="clientVerified"> I have reviewed these client details and confirm they are correct</label><p class="smallnote">Saving a client without ticking this box keeps it marked RED / VERIFY.</p></div>
 </div><div class="toolbar"><button type="submit" class="btn" id="clientSave">Save client</button><button class="btn outline" type="button" id="clientCancel">Cancel / New</button></div></form></div></section>
 <section class="section hide" id="quotes">
 <div class="panel no-print"><div class="heading"><div><h2>Quote register</h2><p class="muted">Real quotes linked to Supabase clients. No sample records are imported automatically.</p></div><button type="button" class="btn outline small" id="quotesRefresh">Refresh</button></div>
@@ -437,12 +447,14 @@ $('signOutBtn').onclick=async()=>{
 };
 function resetClientForm(){
  editClientId=null;$('clientForm').reset();$('clientFormTitle').textContent='Add client';$('clientSave').textContent='Save client';
+ $('clientVerificationBox').classList.add('hide');
 }
 let viewingInactiveClients=false;
 function renderClients(){
  const term=$('clientSearch').value.trim().toLocaleLowerCase('en-AU');
  const selected=clientRecords.filter(c=>Boolean(c.is_active)!==viewingInactiveClients)
-   .filter(c=>[c.business_name,c.contact_name,c.email,c.site_address].join(' ').toLocaleLowerCase('en-AU').includes(term));
+   .filter(c=>[c.business_name,c.contact_name,c.email,c.site_address].join(' ').toLocaleLowerCase('en-AU').includes(term))
+   .sort((a,b)=>Number(a.is_verified!==false)-Number(b.is_verified!==false)||a.business_name.localeCompare(b.business_name));
  const activeCount=clientRecords.filter(c=>c.is_active).length;
  const inactiveCount=clientRecords.length-activeCount;
  $('toggleInactiveClients').textContent=viewingInactiveClients?'Active Clients ('+activeCount+')':'Inactive Clients ('+inactiveCount+')';
@@ -450,11 +462,18 @@ function renderClients(){
  const tbody=$('clientRows');tbody.replaceChildren();
  for(const c of selected){
   const tr=document.createElement('tr');
+  const needsVerification=c.is_verified===false;
+  if(needsVerification)tr.classList.add('client-unverified-row');
   for(const value of [c.business_name,c.contact_name||'—',c.site_address||'—']){
     const td=document.createElement('td');td.textContent=value;tr.appendChild(td);
   }
   const td=document.createElement('td');
   const actions=document.createElement('div');actions.className='toolbar';actions.style.margin='0';actions.style.gap='6px';
+  if(needsVerification&&!viewingInactiveClients){
+    const verify=document.createElement('button');
+    verify.type='button';verify.className='btn small client-verify-button';verify.textContent='VERIFY';
+    verify.addEventListener('click',()=>editClient(c.id,true));actions.appendChild(verify);
+  }
   const edit=document.createElement('button');edit.type='button';edit.className='btn outline small';edit.textContent='Edit';edit.addEventListener('click',()=>editClient(c.id));actions.appendChild(edit);
   const action=document.createElement('button');action.type='button';action.className='btn outline small';
   action.textContent=viewingInactiveClients?'Restore':'Cancel';
@@ -472,7 +491,8 @@ function renderClients(){
    tr.appendChild(td);tbody.appendChild(tr);
  }
  $('statClients').textContent=activeCount;
- $('clientStatus').textContent=activeCount+' active · '+inactiveCount+' inactive client(s) in Supabase.';
+ const needReview=clientRecords.filter(c=>c.is_active&&c.is_verified===false).length;
+ $('clientStatus').textContent=activeCount+' active · '+inactiveCount+' inactive client(s) in Supabase'+(needReview?' · '+needReview+' NEED VERIFICATION':'')+'.';
 }
 async function setClientActive(id,isActive){
  const c=clientRecords.find(x=>x.id===id);if(!c||!sb||!authUser)return;
@@ -498,15 +518,19 @@ $('toggleInactiveClients').onclick=()=>{viewingInactiveClients=!viewingInactiveC
 async function loadClients(){
  if(!sb||!authUser)return;
  $('clientStatus').textContent='Loading clients…';
- const {data,error}=await sb.from('clients').select('id,business_name,contact_name,email,phone,site_address,billing_address,notes,created_at,is_active').order('business_name',{ascending:true});
+ const {data,error}=await sb.from('clients').select('id,business_name,contact_name,email,phone,site_address,billing_address,notes,created_at,is_active,is_verified').order('business_name',{ascending:true});
  if(error){clientRecords=[];renderClients();refreshInvoiceClientOptions();$('clientStatus').textContent='Database error: '+error.message;$('invoiceClientStatus').textContent='Could not load clients: '+error.message;return}
  clientRecords=data||[];renderClients();refreshInvoiceClientOptions();refreshManualClientOptions();refreshQuoteClientOptions();refreshQuoteImportClients();
 }
-function editClient(id){
+function editClient(id,verifyMode=false){
  const c=clientRecords.find(r=>r.id===id);if(!c)return;
  editClientId=c.id;
+ const mustVerify=c.is_verified===false;
+ $('clientVerificationBox').classList.toggle('hide',!mustVerify);
+ $('clientVerified').checked=false;
  for(const [field,key] of [['clientBusiness','business_name'],['clientContact','contact_name'],['clientEmail','email'],['clientPhone','phone'],['clientSite','site_address'],['clientBilling','billing_address'],['clientNotes','notes']])$(field).value=c[key]||'';
- $('clientFormTitle').textContent='Edit client';$('clientSave').textContent='Update client';
+ $('clientFormTitle').textContent=mustVerify?'VERIFY client details':'Edit client';
+ $('clientSave').textContent=mustVerify?'Save / Verify client':'Update client';
  $('clientForm').scrollIntoView({behavior:'smooth',block:'start'});
 }
 $('clientSearch').oninput=renderClients;
@@ -515,6 +539,8 @@ $('clientCancel').onclick=resetClientForm;
 $('clientForm').addEventListener('submit',async e=>{
  e.preventDefault();if(!sb||!authUser){alert('Sign in first.');return}
  const record={business_name:$('clientBusiness').value.trim(),contact_name:$('clientContact').value.trim()||null,email:$('clientEmail').value.trim()||null,phone:$('clientPhone').value.trim()||null,site_address:$('clientSite').value.trim()||null,billing_address:$('clientBilling').value.trim()||null,notes:$('clientNotes').value.trim()||null};
+ const existingRecord=clientRecords.find(c=>c.id===editClientId);
+ if(existingRecord?.is_verified===false)record.is_verified=$('clientVerified').checked;
  if(!record.business_name){alert('Enter business name');return}
  // Warn about likely duplicates before writing. Matching names at different sites
  // can be legitimate, so let the owner explicitly confirm the exception.
