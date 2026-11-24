@@ -366,6 +366,10 @@
 </div></section>
 <section class="section hide" id="reports"><div class="panel"><h2>Existing reports stay intact</h2><p>Continue using the live reporting tool while we develop secure online records and a reliable migration method.</p><a class="btn" style="display:inline-block;text-decoration:none" href="https://reports.urbancare.au/">Open existing reporting tool</a><p class="smallnote">On your GitHub Pages deployment this opens your existing report creator. It currently stores reports on each device.</p></div><div class="panel"><h2>Next integration</h2><p class="muted">Use the existing export-backup function to prepare for migration, then link saved reports to shared client IDs and job IDs in the future database. Do not overwrite browser data.</p></div></section>
 <section class="section hide" id="invoices">
+<div class="panel no-print"><div class="heading"><div><h2>Invoice history</h2><p class="muted">Read-only issued invoice register, linked to Supabase clients.</p></div><button class="btn outline small" id="refreshInvoiceHistory" type="button">Refresh history</button></div>
+<p class="smallnote" id="invoiceHistoryStatus" role="status">Waiting for connection…</p>
+<table class="table"><thead><tr><th>Invoice</th><th>Client</th><th>Issue date</th><th>Total</th><th>Status</th><th>Original PDF</th></tr></thead><tbody id="invoiceHistoryRows"></tbody></table></div>
+
 <div class="panel no-print"><div class="heading"><div><h2>Editable invoice draft</h2><p class="muted">Prepare a draft for Padel Point, add extra items, and review the PDF and email before issue.</p></div><span class="status draft">Draft only</span></div>
 <p class="smallnote"><b>Privacy:</b> Saved drafts are stored under your authenticated Supabase account when the invoice_drafts table is activated. Existing local drafts can be imported by saving them online. The portal does not issue invoices or create Outlook drafts automatically.</p>
 <form id="invoiceForm">
@@ -412,9 +416,7 @@
 <p id="manualImportStatus" class="smallnote" role="status">Nothing is emailed by this action. PDFs stay in private Supabase storage.</p>
 </form>
 </div>
-<div class="panel no-print"><div class="heading"><div><h2>Invoice history</h2><p class="muted">Read-only issued invoice register, linked to Supabase clients.</p></div><button class="btn outline small" id="refreshInvoiceHistory" type="button">Refresh history</button></div>
-<p class="smallnote" id="invoiceHistoryStatus" role="status">Waiting for connection…</p>
-<table class="table"><thead><tr><th>Invoice</th><th>Client</th><th>Issue date</th><th>Total</th><th>Status</th><th>Original PDF</th></tr></thead><tbody id="invoiceHistoryRows"></tbody></table></div>
+
 <div class="panel no-print"><div class="heading"><h2>Outlook email — editable preview</h2><span class="status draft">Not sent</span></div>
 <div class="fields"><div class="field"><label for="mailTo">Recipient — confirm before Outlook draft</label><input id="mailTo" type="email" placeholder="Enter confirmed billing email"></div><div class="field"><label for="mailSubject">Subject</label><input id="mailSubject"></div><div class="field span"><label for="mailBody">Email body</label><textarea id="mailBody" rows="8"></textarea></div></div>
 <div class="toolbar"><button class="btn outline" id="fillEmail" type="button">Generate email from invoice</button><button class="btn outline" id="copyEmail" type="button">Copy email text</button></div>
