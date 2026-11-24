@@ -202,6 +202,11 @@
  body.print-quote .quote-sheet-variation .quote-variation-copy h3{margin-top:3.7mm!important}
  body.print-quote .quote-sheet-variation .quote-foot{padding-top:5mm!important}
 }
+
+/* TEST quotes are grouped at the bottom and muted to avoid mixing with issued work. */
+#quotesRows tr.quote-test-row{background:#f1f2f2;color:#64716b}
+#quotesRows tr.quote-test-row td{border-top-color:#d9ded9}
+#quotesRows select.quote-status-test{background:#e7e9e8;color:#4c5952;border:1px solid #aab4ad;border-radius:7px;padding:7px 10px;font-weight:750}
 </style></head><body class="auth-locked">
 <section id="authGate" aria-label="URBANCARE private login"><div class="auth-card">
 <img src="https://reports.urbancare.au/urbancare-wordmark.png" alt="URBANCARE">
@@ -809,7 +814,7 @@ $('copyEmail').onclick=()=>{const content='To: '+$('mailTo').value+'\nSubject: '
 /* URBANCARE Quotes: editable drafts and owner-only quote register. */
 const Q_FIELDS=['qFrequency','qStartDate','qChangeSummary','qCoverage','qTermination','qNumber','qDate','qValidity','qTitle','qScope','qMethod','qExclusions','qOption1','qPrice1','qOption2','qPrice2','qSelected','qCustomTotal','qExtras','qArrangements'];
 let quoteRecords=[],activeQuoteId=null,activeQuoteImagePath=null,previewQuoteImageUrl=null,activeQuoteSourceId=null,activeQuoteKind='standard';
-const QUOTE_STATUSES=['draft','sent','approved','declined','cancelled','archived'];
+const QUOTE_STATUSES=['draft','test','sent','approved','declined','cancelled','archived'];
 function initQuoteDate(){
  const now=new Date();const local=new Date(now.getTime()-now.getTimezoneOffset()*60000);
  $('qDate').value=local.toISOString().slice(0,10);
@@ -924,20 +929,23 @@ function refreshQuotePreview(){
 }
 function renderQuoteRows(){
  const tbody=$('quotesRows');tbody.replaceChildren();
- for(const q of quoteRecords){
+ const ordered=[...quoteRecords].sort((a,b)=>Number(a.status==='test')-Number(b.status==='test'));
+ for(const q of ordered){
   const c=clientRecords.find(x=>x.id===q.client_id),tr=document.createElement('tr');
+  if(q.status==='test')tr.classList.add('quote-test-row');
   for(const value of [q.quote_number||'Unnumbered draft',c?.business_name||'Client record',q.quote_data?.imported && !q.quote_data?.qCustomTotal?'See original PDF':aud(quoteTotal(q.quote_data||{}))]){
     const td=document.createElement('td');td.textContent=value;tr.appendChild(td);
   }
   const statusTd=document.createElement('td'),sel=document.createElement('select');
   sel.setAttribute('aria-label','Change status for quote '+(q.quote_number||q.id));
-  for(const status of QUOTE_STATUSES.filter(x=>q.status==='draft'||x!=='draft'))sel.add(new Option(status[0].toUpperCase()+status.slice(1),status));
+  for(const status of QUOTE_STATUSES.filter(x=>['draft','test'].includes(q.status)||!['draft','test'].includes(x)))sel.add(new Option(status==='test'?'TEST':status[0].toUpperCase()+status.slice(1),status));
   sel.value=q.status;
   sel.classList.toggle('quote-status-approved',q.status==='approved');
+  sel.classList.toggle('quote-status-test',q.status==='test');
   sel.addEventListener('change',async()=>{
     const next=sel.value;sel.value=q.status;
     if(next===q.status)return;
-    if(next!=='draft'&&!q.quote_number){alert('Save a unique quote number before changing status.');return}
+    if(!['draft','test'].includes(next)&&!q.quote_number){alert('Save a unique quote number before changing status.');return}
     if(!confirm('Set quote '+(q.quote_number||'(unnumbered)')+' to '+next+'? This records its status only and does not send an email.'))return;
     const {error}=await sb.from('quotes').update({status:next,updated_at:new Date().toISOString()}).eq('id',q.id);
     if(error){alert('Could not update quote status: '+error.message);return}
@@ -967,7 +975,8 @@ function renderQuoteRows(){
   const tr=document.createElement('tr'),td=document.createElement('td');td.colSpan=5;
   td.textContent='No quotes saved yet. Create a draft below.';tr.appendChild(td);tbody.appendChild(tr);
  }
- $('quotesStatus').textContent=quoteRecords.length+' saved quote(s) in Supabase.';
+ const tests=quoteRecords.filter(x=>x.status==='test').length;
+ $('quotesStatus').textContent=(quoteRecords.length-tests)+' real quote(s)'+(tests?' · '+tests+' TEST quote(s) shown at the bottom':'')+'.';
 }
 async function loadQuotes(){
  if(!sb||!authUser)return;
@@ -1012,7 +1021,7 @@ async function saveQuote(event){
  if([d.qPrice1,d.qPrice2,d.qCustomTotal].some(x=>!Number.isFinite(Number(x))||Number(x)<0))
    return alert('Check quote amounts.');
  const current=quoteRecords.find(q=>q.id===activeQuoteId);
- if(current&&current.status!=='draft')return alert('This quote has already left Draft status and cannot be edited in this form.');
+ if(current&&current.status!=='draft')return alert(current.status==='test'?'Change status from TEST back to Draft in the Quote Register before editing.':'This quote has already left Draft status and cannot be edited in this form.');
  const quoteNo=d.qNumber.trim()||null;
  if(activeQuoteKind==='variation'){
    const parent=quoteRecords.find(x=>x.id===activeQuoteSourceId);
