@@ -208,6 +208,13 @@
 #quotesRows tr.quote-test-row td{border-top-color:#d9ded9}
 #quotesRows select.quote-status-test{background:#e7e9e8;color:#4c5952;border:1px solid #aab4ad;border-radius:7px;padding:7px 10px;font-weight:750}
 
+/* Incomplete operational records stay active but are grouped last in orange. */
+#clientRows .client-incomplete-row{background:#fff0d8;color:#7a4614}
+#clientRows .client-incomplete-row td{border-bottom-color:#ebcda4}
+#clientRows .client-incomplete-row td:first-child{font-weight:750}
+#clientRows .client-missing-button{background:#b45d10;border-color:#b45d10;color:#fff;font-size:11px;font-weight:750;white-space:nowrap}
+#clientRows .client-missing-button:hover{background:#8b470b}
+#clientRows .client-missing-details{font-size:11px;margin:0 0 6px;color:#8e541d;line-height:1.4}
 /* Automatically imported clients remain active but visibly require human review. */
 #clientRows .client-unverified-row{background:#fff0ef;color:#722b2a}
 #clientRows .client-unverified-row td{border-bottom-color:#e9c8c5}
@@ -464,11 +471,25 @@ function resetClientForm(){
  $('clientVerificationBox').classList.add('hide');
 }
 let viewingInactiveClients=false;
+// Minimum details for servicing and contacting a client. Other billing fields
+// (ABN, PO and legal entity) remain optional until a specific invoice needs them.
+function missingClientInfo(c){
+ const missing=[];
+ if(!String(c.site_address||'').trim())missing.push('Service / site address');
+ if(!String(c.email||'').trim()&&!String(c.accounts_email||'').trim())
+   missing.push('Contact or accounts email');
+ return missing;
+}
+function clientDirectoryPriority(c){
+ if(missingClientInfo(c).length)return 2; // incomplete clients always appear last
+ if(c.is_verified===false)return 1; // red, pending verification
+ return 0; // complete, verified clients first
+}
 function renderClients(){
  const term=$('clientSearch').value.trim().toLocaleLowerCase('en-AU');
  const selected=clientRecords.filter(c=>Boolean(c.is_active)!==viewingInactiveClients)
    .filter(c=>[c.business_name,c.trading_name,c.legal_billing_entity,c.contact_name,c.email,c.accounts_email,c.site_address,c.client_abn].join(' ').toLocaleLowerCase('en-AU').includes(term))
-   .sort((a,b)=>Number(a.is_verified!==false)-Number(b.is_verified!==false)||a.business_name.localeCompare(b.business_name));
+   .sort((a,b)=>clientDirectoryPriority(a)-clientDirectoryPriority(b)||a.business_name.localeCompare(b.business_name));
  const activeCount=clientRecords.filter(c=>c.is_active).length;
  const inactiveCount=clientRecords.length-activeCount;
  $('toggleInactiveClients').textContent=viewingInactiveClients?'Active Clients ('+activeCount+')':'Inactive Clients ('+inactiveCount+')';
@@ -477,12 +498,22 @@ function renderClients(){
  for(const c of selected){
   const tr=document.createElement('tr');
   const needsVerification=c.is_verified===false;
-  if(needsVerification)tr.classList.add('client-unverified-row');
+  const missing=missingClientInfo(c);
+  if(missing.length)tr.classList.add('client-incomplete-row');
+  else if(needsVerification)tr.classList.add('client-unverified-row');
   for(const value of [c.business_name,c.contact_name||'—',c.site_address||'—']){
     const td=document.createElement('td');td.textContent=value;tr.appendChild(td);
   }
   const td=document.createElement('td');
-  const actions=document.createElement('div');actions.className='toolbar';actions.style.margin='0';actions.style.gap='6px';
+  const actions=document.createElement('div');actions.className='toolbar';actions.style.margin='0';actions.style.gap='6px';actions.style.alignItems='center';
+  if(missing.length){
+    const info=document.createElement('button');info.type='button';
+    info.className='btn small client-missing-button';info.textContent='MISSING INFO';
+    info.title='Missing: '+missing.join(', ');
+    info.setAttribute('aria-label','Edit missing information for '+c.business_name+': '+missing.join(', '));
+    info.addEventListener('click',()=>editClient(c.id));
+    actions.appendChild(info);
+  }
   if(needsVerification&&!viewingInactiveClients){
     const verify=document.createElement('button');
     verify.type='button';verify.className='btn small client-verify-button';verify.textContent='VERIFY';
@@ -501,6 +532,11 @@ function renderClients(){
     const remove=document.createElement('button');remove.type='button';remove.className='btn outline small';remove.textContent='Delete permanently';
     remove.addEventListener('click',()=>deleteInactiveClient(c.id));actions.appendChild(remove);
   }
+  if(missing.length){
+    const detail=document.createElement('div');detail.className='client-missing-details';
+    detail.textContent='Needed: '+missing.join(' · ');
+    td.appendChild(detail);
+  }
   td.appendChild(actions);tr.appendChild(td);tbody.appendChild(tr);
  }
  if(!selected.length){
@@ -510,7 +546,10 @@ function renderClients(){
  }
  $('statClients').textContent=activeCount;
  const needReview=clientRecords.filter(c=>c.is_active&&c.is_verified===false).length;
- $('clientStatus').textContent=activeCount+' active · '+inactiveCount+' inactive client(s) in Supabase'+(needReview?' · '+needReview+' NEED VERIFICATION':'')+'.';
+ const incomplete=clientRecords.filter(c=>c.is_active&&missingClientInfo(c).length).length;
+ $('clientStatus').textContent=activeCount+' active · '+inactiveCount+' inactive client(s) in Supabase'+
+   (needReview?' · '+needReview+' NEED VERIFICATION':'')+
+   (incomplete?' · '+incomplete+' MISSING INFO (orange, at bottom)':'')+'.';
 }
 async function setClientActive(id,isActive){
  const c=clientRecords.find(x=>x.id===id);if(!c||!sb||!authUser)return;
