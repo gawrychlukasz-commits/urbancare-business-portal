@@ -233,6 +233,10 @@
 #quotesRows .quote-verified-label{background:#e2f2e5;border:1px solid #a2d3ad;border-radius:7px;color:#206839;padding:7px 10px;font-size:11px;font-weight:750;margin-right:6px;display:inline-flex}
 #quotesRows .quote-pdf-pending{background:#fff0d8;border:1px solid #e7c18a;border-radius:7px;color:#874b0e;padding:7px 9px;font-size:11px;margin-right:6px;display:inline-flex}
 #quotesRows .quote-delivery-text{font-size:11px;color:#607062;margin-top:5px}
+.dashboard-shortcut{font:inherit;text-align:left;cursor:pointer;width:100%;border:1px solid #dce3db;transition:transform .15s ease,border-color .15s ease,box-shadow .15s ease}
+.dashboard-shortcut:hover{border-color:#7c9d80;box-shadow:0 5px 16px rgba(23,32,27,.09);transform:translateY(-1px)}
+.dashboard-shortcut:focus-visible{outline:3px solid #53765a;outline-offset:3px}
+.dashboard-shortcut small{color:#3c694a}
 </style></head><body class="auth-locked">
 <section id="authGate" aria-label="URBANCARE private login"><div class="auth-card">
 <img src="https://reports.urbancare.au/urbancare-wordmark.png" alt="URBANCARE">
@@ -256,7 +260,12 @@
 <div class="side-bottom">URBANCARE · Exterior Property Care<br>Prototype · No live data sync</div></aside>
 <main class="main"><header class="topline"><div><div class="eyebrow">URBANCARE / Operations</div><h1 id="pageTitle">Business overview</h1><div id="pageSubtitle" class="muted">Your clients, services and billing in one place</div></div><div id="userBar"><span id="signedInEmail"></span><button type="button" class="btn outline small" id="signOutBtn">Sign out</button></div></header>
 <div class="notice"><b>Development portal.</b> Login and the Clients table are connected to Supabase. Quotes, dashboard figures and invoices are still demonstrations, and invoices are saved only in this browser. Existing reports are not synchronised. Do not issue invoices from the prototype.</div>
-<section class="section" id="dashboard"><div class="stats"><div class="stat"><span>Active clients</span><strong id="statClients">2</strong><small>Example records</small></div><div class="stat"><span>Quotes awaiting approval</span><strong>1</strong><small>Illustration</small></div><div class="stat"><span>To invoice</span><strong id="statToInvoice">1</strong><small>Example workflow</small></div><div class="stat"><span>Invoice history total</span><strong id="statInvoiced">—</strong><small>Payment status is not verified</small></div></div><div class="grid"><div class="panel"><div class="heading"><div><h2>Recent activity</h2><div class="muted">Illustrative overview of the connected workflow</div></div></div><table class="table"><thead><tr><th>Client</th><th>Record</th><th>Stage</th></tr></thead><tbody><tr><td>Padel Point</td><td>Glass cleaning / service report</td><td><span class="status warn">Ready for invoice review</span></td></tr><tr><td>Tribe Padel</td><td>Glass cleaning / quote</td><td><span class="status draft">Pending approval</span></td></tr></tbody></table></div><div class="panel"><h2>How it will work</h2><div class="step"><span class="num">1</span><div><b>Save the client once</b><p>Contact, site and billing details shared across modules</p></div></div><div class="step"><span class="num">2</span><div><b>Prepare quote & complete work</b><p>Link accepted quote to a job and report</p></div></div><div class="step"><span class="num">3</span><div><b>Generate invoice from job</b><p>Review final amount and issue number on send</p></div></div><div class="step"><span class="num">4</span><div><b>Track payment</b><p>Record settled and overdue balances</p></div></div></div></div></section>
+<section class="section" id="dashboard"><div class="stats">
+<button type="button" class="stat dashboard-shortcut" data-target-page="clients" aria-label="Open Active Clients from left navigation"><span>Active clients</span><strong id="statClients">—</strong><small>Open client register →</small></button>
+<button type="button" class="stat dashboard-shortcut" data-target-page="quotes" aria-label="Open Quotes from left navigation"><span>Quotes</span><strong id="statQuotes">—</strong><small>Open quote register →</small></button>
+<button type="button" class="stat dashboard-shortcut" data-target-page="invoices" aria-label="Open Invoices from left navigation"><span>Invoices</span><strong id="statInvoiceCount">—</strong><small>Open invoice history →</small></button>
+<button type="button" class="stat dashboard-shortcut" data-target-page="invoices" aria-label="Open invoice history total"><span>Invoice history total</span><strong id="statInvoiced">—</strong><small>Issued, non-void invoices →</small></button>
+</div><div class="grid"><div class="panel"><div class="heading"><div><h2>Recent activity</h2><div class="muted">Illustrative overview of the connected workflow</div></div></div><table class="table"><thead><tr><th>Client</th><th>Record</th><th>Stage</th></tr></thead><tbody><tr><td>Padel Point</td><td>Glass cleaning / service report</td><td><span class="status warn">Ready for invoice review</span></td></tr><tr><td>Tribe Padel</td><td>Glass cleaning / quote</td><td><span class="status draft">Pending approval</span></td></tr></tbody></table></div><div class="panel"><h2>How it will work</h2><div class="step"><span class="num">1</span><div><b>Save the client once</b><p>Contact, site and billing details shared across modules</p></div></div><div class="step"><span class="num">2</span><div><b>Prepare quote & complete work</b><p>Link accepted quote to a job and report</p></div></div><div class="step"><span class="num">3</span><div><b>Generate invoice from job</b><p>Review final amount and issue number on send</p></div></div><div class="step"><span class="num">4</span><div><b>Track payment</b><p>Record settled and overdue balances</p></div></div></div></div></section>
 <section class="section hide" id="clients"><div class="toolbar"><input id="clientSearch" aria-label="Search client" placeholder="Search client or contact"><button class="btn outline" id="refreshClients" type="button">Refresh clients</button><button class="btn outline" id="toggleInactiveClients" type="button">Inactive Clients (0)</button></div>
 <div class="panel"><div class="heading"><div><h2 id="clientsListTitle">Active client directory</h2><p class="muted">Protected Supabase records; inactive clients retain their existing history.</p></div><span class="status good">Connected</span></div>
 <p id="clientStatus" class="smallnote" role="status">Waiting for login…</p>
@@ -429,13 +438,19 @@ const pages={dashboard:['Business overview','Your clients, services and billing 
 // Live clients are loaded from Supabase. No invoice client examples are treated as real records.
 const $=id=>document.getElementById(id); const aud=v=>new Intl.NumberFormat('en-AU',{style:'currency',currency:'AUD'}).format(v);const dateStr=d=>new Intl.DateTimeFormat('en-AU',{day:'2-digit',month:'long',year:'numeric',timeZone:'UTC'}).format(d);
 document.querySelectorAll('[data-page]').forEach(b=>b.addEventListener('click',()=>{const page=b.dataset.page;document.querySelectorAll('[data-page]').forEach(x=>x.classList.toggle('active',x===b));document.querySelectorAll('.section').forEach(x=>x.classList.toggle('hide',x.id!==page));$('pageTitle').textContent=pages[page][0];$('pageSubtitle').textContent=pages[page][1];window.scrollTo(0,0)}));
+document.querySelectorAll('.dashboard-shortcut[data-target-page]').forEach(button=>{
+ button.addEventListener('click',()=>{
+   const target=document.querySelector('#nav [data-page="'+button.dataset.targetPage+'"]');
+   if(target)target.click();
+ });
+});
 // Supabase owns the client directory; never display placeholder records as real clients.
 let clientRecords=[], editClientId=null, authUser=null;
 const SB_URL='https://ysztlxvekbnqoikkvuii.supabase.co';
 const SB_PUBLISHABLE='sb_publishable_HJyktcNs6Cil-rzOckfBAQ_HxrsV_Ji';
 let sb=null;
 function setAuthMessage(message,isError=false){$('authStatus').textContent=isError?'':' '+message;$('authError').textContent=isError?message:'';}
-function showLoggedOut(){authUser=null;clientRecords=[];savedDrafts=[];activeDraftId=null;quoteRecords=[];activeQuoteId=null;document.body.classList.add('auth-locked');$('signedInEmail').textContent='';$('authPassword').value='';$('invClient').replaceChildren(new Option('— Sign in to load clients —',''));$('invoiceClientStatus').textContent='Sign in to load clients.';}
+function showLoggedOut(){authUser=null;clientRecords=[];savedDrafts=[];activeDraftId=null;quoteRecords=[];activeQuoteId=null;document.body.classList.add('auth-locked');$('statClients').textContent='—';$('statQuotes').textContent='—';$('statInvoiceCount').textContent='—';$('statInvoiced').textContent='—';$('signedInEmail').textContent='';$('authPassword').value='';$('invClient').replaceChildren(new Option('— Sign in to load clients —',''));$('invoiceClientStatus').textContent='Sign in to load clients.';}
 async function showLoggedIn(user){
  if(!user)return showLoggedOut();
  authUser=user;document.body.classList.remove('auth-locked');$('signedInEmail').textContent=user.email||'Signed in';
@@ -777,6 +792,7 @@ async function loadInvoiceHistory(){
    status.textContent='Invoice history is not set up yet. Run database/002_invoice_history.sql in Supabase before using it. ('+error.message+')';
    $('invoiceHistoryRows').replaceChildren();
    $('statInvoiced').textContent='—';
+   $('statInvoiceCount').textContent='—';
    return;
  }
  issuedInvoices=data||[];
@@ -803,6 +819,7 @@ async function loadInvoiceHistory(){
    const tr=document.createElement('tr'),td=document.createElement('td');
    td.colSpan=6;td.textContent='No issued invoices recorded yet.';tr.appendChild(td);tbody.appendChild(tr);
  }
+ $('statInvoiceCount').textContent=issuedInvoices.filter(x=>x.issue_status!=='void').length;
  $('statInvoiced').textContent=aud(issuedInvoices.filter(x=>x.issue_status!=='void').reduce((sum,x)=>sum+Number(x.amount_aud||0),0));
  status.textContent=issuedInvoices.length+' issued invoice record(s). Payment status requires manual confirmation.';
 }
@@ -1124,9 +1141,11 @@ async function loadQuotes(){
    .order('updated_at',{ascending:false}).limit(200);
  if(error){
    $('quotesStatus').textContent='Quote database not active. Run database/006_quotes.sql in Supabase. ('+error.message+')';
+   $('statQuotes').textContent='—';
    return;
  }
  quoteRecords=data||[];
+ $('statQuotes').textContent=quoteRecords.filter(q=>q.status!=='test').length;
  renderQuoteRows();refreshQuoteClientOptions();refreshQuoteImportClients();refreshQuotePreview();
 }
 function newQuote(){
