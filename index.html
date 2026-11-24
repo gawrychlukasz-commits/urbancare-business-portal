@@ -142,7 +142,7 @@
 .quote-copy p{font-size:11px;white-space:pre-line;line-height:1.52;margin:0 0 9px;overflow-wrap:anywhere}
 .quote-option{display:flex;justify-content:space-between;gap:12px;border-top:1px solid #ddd;padding:8px 0 6px;font-size:11px}
 .quote-option strong{white-space:nowrap}
-.quote-tax{font-size:10px!important;font-style:italic;margin-top:6px!important}
+.quote-selected{display:flex;justify-content:space-between;gap:10px;background:#edf2ec;padding:10px 8px;margin-top:9px;font-size:11px;font-weight:700;color:#2c4b36}.quote-tax{font-size:10px!important;font-style:italic;margin-top:6px!important}
 .quote-picture{display:flex;flex-direction:column;min-height:270px}
 .quote-picture img{width:100%;height:auto;max-height:500px;object-fit:contain}
 .quote-picture small{font-size:9px;color:#687469;margin-top:7px}
@@ -156,6 +156,7 @@
  body.print-quote .sidebar,body.print-quote .topline,body.print-quote .notice{display:none!important}
  body.print-quote .main{padding:0!important;max-width:none!important;margin:0!important}
  body.print-quote .section{display:none!important}
+ body.print-quote #invoices{display:none!important}
  body.print-quote #quotes{display:block!important}
  body.print-quote #quotes>.panel{display:none!important}
  body.print-quote #quotePreview{display:flex!important;max-width:none!important;min-height:270mm!important;margin:0!important;border:0!important;border-radius:0!important;padding:0!important;box-shadow:none!important}
@@ -243,7 +244,7 @@
 <div id="qpOption1" class="quote-option"><span id="qpOption1Label"></span><strong id="qpOption1Amount"></strong></div>
 <div id="qpOption2" class="quote-option"><span id="qpOption2Label"></span><strong id="qpOption2Amount"></strong></div>
 <div id="qpCustom" class="quote-option"><span>Agreed service total</span><strong id="qpCustomAmount"></strong></div>
-<p class="quote-tax">GST not charged. URBANCARE is not registered for GST.</p>
+<div class="quote-selected"><span>Selected quote total</span><strong id="qpSelectedAmount"></strong></div><p class="quote-tax">GST not charged. URBANCARE is not registered for GST.</p>
 <h3>Arrangements</h3><p id="qpArrangements"></p>
 <p id="qpExtras"></p></div>
 <div class="quote-picture"><img id="qpImage" alt="Site scope reference" class="hide"><p id="qpImagePlaceholder">Site photo / marked scope image can be added to this quotation.</p><small>Site image for reference only; confirm scope before acceptance.</small></div></div>
@@ -794,6 +795,7 @@ function refreshQuotePreview(){
  $('qpOption1Amount').textContent=aud(Number(d.qPrice1)||0);
  $('qpOption2Amount').textContent=aud(Number(d.qPrice2)||0);
  $('qpCustomAmount').textContent=aud(Number(d.qCustomTotal)||0);
+ $('qpSelectedAmount').textContent=aud(quoteTotal(d));
  $('qpArrangements').textContent=d.qArrangements||'Access, water, parking, working hours and proposed date to be confirmed.';
  $('qpExtras').textContent=d.qExtras||'';
  const q=quoteRecords.find(q=>q.id===activeQuoteId);
