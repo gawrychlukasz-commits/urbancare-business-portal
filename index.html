@@ -1068,7 +1068,10 @@ function renderQuoteRows(){
  for(const q of ordered){
   const c=clientRecords.find(x=>x.id===q.client_id),tr=document.createElement('tr');
   if(q.status==='test')tr.classList.add('quote-test-row');else if(q.is_verified===false)tr.classList.add('quote-unverified-row');
-  for(const value of [q.quote_number||'Unnumbered draft',c?.business_name||'Client record',q.quote_data?.imported && !q.quote_data?.qCustomTotal?'See original PDF':aud(quoteTotal(q.quote_data||{}))]){
+  const referenceLabel=q.quote_number||'Unnumbered draft';
+  const originalRef=q.original_quote_number&&q.original_quote_number!==q.quote_number?
+     ' (original PDF: '+q.original_quote_number+')':'';
+  for(const value of [referenceLabel+originalRef,c?.business_name||'Client record',q.quote_data?.imported && !q.quote_data?.qCustomTotal?'See original PDF':aud(quoteTotal(q.quote_data||{}))]){
     const td=document.createElement('td');td.textContent=value;tr.appendChild(td);
   }
   const statusTd=document.createElement('td'),sel=document.createElement('select');
@@ -1115,7 +1118,7 @@ function renderQuoteRows(){
 async function loadQuotes(){
  if(!sb||!authUser)return;
  $('quotesStatus').textContent='Loading quotes…';
- const {data,error}=await sb.from('quotes').select('id,client_id,quote_number,status,quote_data,image_path,source_quote_id,original_pdf_path,is_verified,delivery_method,sent_date,updated_at')
+ const {data,error}=await sb.from('quotes').select('id,client_id,quote_number,original_quote_number,status,quote_data,image_path,source_quote_id,original_pdf_path,is_verified,delivery_method,sent_date,updated_at')
    .order('updated_at',{ascending:false}).limit(200);
  if(error){
    $('quotesStatus').textContent='Quote database not active. Run database/006_quotes.sql in Supabase. ('+error.message+')';
