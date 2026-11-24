@@ -217,6 +217,10 @@
 #clientRows .client-verified-label{display:inline-flex;align-items:center;padding:7px 10px;background:#e2f2e5;border:1px solid #a2d3ad;border-radius:7px;color:#206839;font-size:11px;font-weight:750;letter-spacing:.025em;white-space:nowrap}
 .client-verify-label{display:flex;gap:9px;align-items:flex-start;font-weight:700;color:#9a2323}
 .client-verify-label input{margin-top:3px}
+
+.client-form-heading{border-top:1px solid #e3e9e2;padding-top:12px;margin-top:5px}
+.client-form-heading strong{font-size:13px;color:#244631}
+.client-form-heading p{margin:4px 0 0}
 </style></head><body class="auth-locked">
 <section id="authGate" aria-label="URBANCARE private login"><div class="auth-card">
 <img src="https://reports.urbancare.au/urbancare-wordmark.png" alt="URBANCARE">
@@ -246,12 +250,20 @@
 <p id="clientStatus" class="smallnote" role="status">Waiting for login…</p>
 <table class="table"><thead><tr><th>Business</th><th>Contact</th><th>Location</th><th></th></tr></thead><tbody id="clientRows"></tbody></table></div>
 <div class="panel"><h2 id="clientFormTitle">Add client</h2><form id="clientForm"><div class="client-form-wrap">
-<div class="field"><label for="clientBusiness">Business name *</label><input id="clientBusiness" maxlength="180" required></div>
-<div class="field"><label for="clientContact">Contact name</label><input id="clientContact" maxlength="180"></div>
-<div class="field"><label for="clientEmail">Email</label><input id="clientEmail" type="email"></div>
+<div class="field span client-form-heading"><strong>Business identity</strong><p class="smallnote">Keep the client directory name separate from the legal company responsible for payment.</p></div>
+<div class="field"><label for="clientBusiness">Client directory name *</label><input id="clientBusiness" maxlength="180" required placeholder="e.g. The Cove Dining"></div>
+<div class="field"><label for="clientTrading">Trading name (if different)</label><input id="clientTrading" maxlength="180" placeholder="Name used at venue"></div>
+<div class="field"><label for="clientLegal">Legal billing entity</label><input id="clientLegal" maxlength="180" placeholder="Confirmed registered company / individual"></div>
+<div class="field"><label for="clientABN">Client ABN (optional)</label><input id="clientABN" inputmode="numeric" maxlength="14" placeholder="11 digits; leave blank if unknown"></div>
+<div class="field span client-form-heading"><strong>Contact &amp; accounts</strong></div>
+<div class="field"><label for="clientContact">Contact person</label><input id="clientContact" maxlength="180"></div>
 <div class="field"><label for="clientPhone">Phone</label><input id="clientPhone"></div>
-<div class="field span"><label for="clientSite">Site address</label><input id="clientSite"></div>
+<div class="field"><label for="clientEmail">Primary contact email</label><input id="clientEmail" type="email"></div>
+<div class="field"><label for="clientAccounts">Accounts / invoice email</label><input id="clientAccounts" type="email" placeholder="Used for invoices when provided"></div>
+<div class="field span client-form-heading"><strong>Locations &amp; billing</strong></div>
+<div class="field span"><label for="clientSite">Service / site address</label><input id="clientSite"></div>
 <div class="field span"><label for="clientBilling">Billing address</label><input id="clientBilling"></div>
+<div class="field span"><label for="clientPO">Purchase order (PO) / accounts reference (optional)</label><input id="clientPO" maxlength="120" placeholder="Client-provided PO or invoicing reference"></div>
 <div class="field span"><label for="clientNotes">Internal notes</label><textarea id="clientNotes" rows="2"></textarea></div>
 <div class="field span hide" id="clientVerificationBox"><p class="smallnote"><strong>Verification:</strong> Review the prefilled information. Clicking <strong>Save / Verify client</strong> confirms the details, removes the red highlight and changes the status to VERIFIED.</p></div>
 </div><div class="toolbar"><button type="submit" class="btn" id="clientSave">Save client</button><button class="btn outline" type="button" id="clientCancel">Cancel / New</button></div></form></div></section>
@@ -353,6 +365,7 @@
 <div class="field"><label for="invTerms">Payment terms (days) — confirm</label><input id="invTerms" type="number" min="0" value="14"></div>
 <div class="field"><label for="invSequence">Monthly sequence — proposed, not reserved</label><input id="invSequence" type="number" min="1" step="1" value="2"></div>
 <div class="field"><label for="invRef">Quote / job reference</label><input id="invRef" value="Quote 1808"></div>
+<div class="field"><label for="invPO">Customer PO / accounts reference</label><input id="invPO" placeholder="Optional; auto-fills from client profile"></div>
 <div class="field"><label for="invServiceDate">Service date — confirm</label><input id="invServiceDate" type="date"></div>
 <div class="field"><label for="invReportRef">Service report reference</label><input id="invReportRef" placeholder="Add report number if available"></div>
 <div class="field span"><label for="invService">Line 1 — service description</label><input id="invService" value="Padel court glass cleaning — internal and external"></div>
@@ -454,7 +467,7 @@ let viewingInactiveClients=false;
 function renderClients(){
  const term=$('clientSearch').value.trim().toLocaleLowerCase('en-AU');
  const selected=clientRecords.filter(c=>Boolean(c.is_active)!==viewingInactiveClients)
-   .filter(c=>[c.business_name,c.contact_name,c.email,c.site_address].join(' ').toLocaleLowerCase('en-AU').includes(term))
+   .filter(c=>[c.business_name,c.trading_name,c.legal_billing_entity,c.contact_name,c.email,c.accounts_email,c.site_address,c.client_abn].join(' ').toLocaleLowerCase('en-AU').includes(term))
    .sort((a,b)=>Number(a.is_verified!==false)-Number(b.is_verified!==false)||a.business_name.localeCompare(b.business_name));
  const activeCount=clientRecords.filter(c=>c.is_active).length;
  const inactiveCount=clientRecords.length-activeCount;
@@ -523,7 +536,7 @@ $('toggleInactiveClients').onclick=()=>{viewingInactiveClients=!viewingInactiveC
 async function loadClients(){
  if(!sb||!authUser)return;
  $('clientStatus').textContent='Loading clients…';
- const {data,error}=await sb.from('clients').select('id,business_name,contact_name,email,phone,site_address,billing_address,notes,created_at,is_active,is_verified').order('business_name',{ascending:true});
+ const {data,error}=await sb.from('clients').select('id,business_name,trading_name,legal_billing_entity,client_abn,contact_name,email,accounts_email,phone,site_address,billing_address,purchase_order_ref,notes,created_at,is_active,is_verified').order('business_name',{ascending:true});
  if(error){clientRecords=[];renderClients();refreshInvoiceClientOptions();$('clientStatus').textContent='Database error: '+error.message;$('invoiceClientStatus').textContent='Could not load clients: '+error.message;return}
  clientRecords=data||[];renderClients();refreshInvoiceClientOptions();refreshManualClientOptions();refreshQuoteClientOptions();refreshQuoteImportClients();
 }
@@ -532,7 +545,7 @@ function editClient(id,verifyMode=false){
  editClientId=c.id;
  const mustVerify=c.is_verified===false;
  $('clientVerificationBox').classList.toggle('hide',!mustVerify);
- for(const [field,key] of [['clientBusiness','business_name'],['clientContact','contact_name'],['clientEmail','email'],['clientPhone','phone'],['clientSite','site_address'],['clientBilling','billing_address'],['clientNotes','notes']])$(field).value=c[key]||'';
+ for(const [field,key] of [['clientBusiness','business_name'],['clientTrading','trading_name'],['clientLegal','legal_billing_entity'],['clientABN','client_abn'],['clientContact','contact_name'],['clientEmail','email'],['clientAccounts','accounts_email'],['clientPhone','phone'],['clientSite','site_address'],['clientBilling','billing_address'],['clientPO','purchase_order_ref'],['clientNotes','notes']])$(field).value=c[key]||'';
  $('clientFormTitle').textContent=mustVerify?'VERIFY client details':'Edit client';
  $('clientSave').textContent=mustVerify?'Save / Verify client':'Update client';
  $('clientForm').scrollIntoView({behavior:'smooth',block:'start'});
@@ -542,10 +555,34 @@ $('refreshClients').onclick=loadClients;
 $('clientCancel').onclick=resetClientForm;
 $('clientForm').addEventListener('submit',async e=>{
  e.preventDefault();if(!sb||!authUser){alert('Sign in first.');return}
- const record={business_name:$('clientBusiness').value.trim(),contact_name:$('clientContact').value.trim()||null,email:$('clientEmail').value.trim()||null,phone:$('clientPhone').value.trim()||null,site_address:$('clientSite').value.trim()||null,billing_address:$('clientBilling').value.trim()||null,notes:$('clientNotes').value.trim()||null};
+ const record={
+  business_name:$('clientBusiness').value.trim(),
+  trading_name:$('clientTrading').value.trim()||null,
+  legal_billing_entity:$('clientLegal').value.trim()||null,
+  client_abn:$('clientABN').value.replace(/\s/g,'').trim()||null,
+  contact_name:$('clientContact').value.trim()||null,
+  email:$('clientEmail').value.trim()||null,
+  accounts_email:$('clientAccounts').value.trim()||null,
+  phone:$('clientPhone').value.trim()||null,
+  site_address:$('clientSite').value.trim()||null,
+  billing_address:$('clientBilling').value.trim()||null,
+  purchase_order_ref:$('clientPO').value.trim()||null,
+  notes:$('clientNotes').value.trim()||null
+ };
  const existingRecord=clientRecords.find(c=>c.id===editClientId);
  if(existingRecord?.is_verified===false)record.is_verified=true; // Save / Verify is the explicit verification action.
  if(!record.business_name){alert('Enter business name');return}
+ if(record.client_abn&&!/^\d{11}$/.test(record.client_abn)){
+   alert('Client ABN must contain exactly 11 digits, or be left blank.');return;
+ }
+ if(record.client_abn){
+   const digits=record.client_abn.split('').map(Number);
+   const weights=[10,1,3,5,7,9,11,13,15,17,19];
+   digits[0]-=1;
+   if(digits.reduce((s,n,i)=>s+n*weights[i],0)%89!==0){
+     alert('Client ABN checksum is invalid. Check the ABN or leave it blank until verified.');return;
+   }
+ }
  // Warn about likely duplicates before writing. Matching names at different sites
  // can be legitimate, so let the owner explicitly confirm the exception.
  const normalize=v=>String(v||'').trim().replace(/\\s+/g,' ').toLocaleLowerCase('en-AU');
@@ -604,10 +641,14 @@ function refreshInvoiceClientOptions(){
 function selectInvoiceClient(){
  const c=clientRecords.find(x=>x.id===$('invClient').value);
  if(!c){$('invoiceClientStatus').textContent='Choose a saved client or add one in Clients first.';return}
- $('invBillTo').value=c.business_name;
+ $('invBillTo').value=c.legal_billing_entity||c.business_name;
  $('invAddress').value=c.billing_address||c.site_address||'';
- $('mailTo').value=c.email||'';
- $('invoiceClientStatus').textContent='Selected '+c.business_name+'. Check the billing address, recipient and price before issuing.';
+ $('mailTo').value=c.accounts_email||c.email||'';
+ $('invPO').value=c.purchase_order_ref||'';
+ $('invoiceClientStatus').textContent='Selected '+c.business_name+
+  (c.legal_billing_entity?' · billing entity: '+c.legal_billing_entity:' · legal billing entity not recorded — confirm before issuing')+
+  (c.accounts_email?' · accounts email loaded':' · using primary email if available')+
+  '. Verify all details before issuing.';
  updateInvoice();
 }
 let invoiceLoadedClientId='';
