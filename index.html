@@ -834,12 +834,12 @@ function renderQuoteRows(){
  const tbody=$('quotesRows');tbody.replaceChildren();
  for(const q of quoteRecords){
   const c=clientRecords.find(x=>x.id===q.client_id),tr=document.createElement('tr');
-  for(const value of [q.quote_number||'Unnumbered draft',c?.business_name||'Client record',aud(quoteTotal(q.quote_data||{}))]){
+  for(const value of [q.quote_number||'Unnumbered draft',c?.business_name||'Client record',q.quote_data?.imported && !q.quote_data?.qCustomTotal?'See original PDF':aud(quoteTotal(q.quote_data||{}))]){
     const td=document.createElement('td');td.textContent=value;tr.appendChild(td);
   }
   const statusTd=document.createElement('td'),sel=document.createElement('select');
   sel.setAttribute('aria-label','Change status for quote '+(q.quote_number||q.id));
-  for(const status of QUOTE_STATUSES)sel.add(new Option(status[0].toUpperCase()+status.slice(1),status));
+  for(const status of QUOTE_STATUSES.filter(x=>q.status==='draft'||x!=='draft'))sel.add(new Option(status[0].toUpperCase()+status.slice(1),status));
   sel.value=q.status;
   sel.addEventListener('change',async()=>{
     const next=sel.value;sel.value=q.status;
