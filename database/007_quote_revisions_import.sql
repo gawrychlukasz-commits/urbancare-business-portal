@@ -14,6 +14,13 @@ begin
  if new.owner_id is distinct from old.owner_id then
    raise exception 'Quote owner cannot change';
  end if;
+ if old.status <> 'draft' and new.status='draft' then
+   raise exception 'A sent or completed quote cannot return to Draft; create a revision';
+ end if;
+ if new.source_quote_id is not null and not exists(
+   select 1 from public.quotes parent
+   where parent.id=new.source_quote_id and parent.owner_id=new.owner_id
+ ) then raise exception 'Original quote must belong to the same account'; end if;
  if old.status <> 'draft' and (
       new.client_id is distinct from old.client_id
       or new.quote_number is distinct from old.quote_number
