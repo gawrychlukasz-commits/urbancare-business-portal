@@ -104,7 +104,7 @@
 <p class="smallnote"><b>Privacy:</b> This development version saves the invoice draft only in this browser. It does not send email or create an Outlook draft automatically. Do not enter bank details or confidential customer information until secure login and storage are enabled.</p>
 <form id="invoiceForm">
 <div class="fields">
-<div class="field"><label for="invClient">Client (sample selection)</label><select id="invClient"><option value="Padel Point">Padel Point</option><option value="Tribe Padel">Tribe Padel</option></select></div>
+<div class="field"><label for="invClient">Client — from live client register</label><select id="invClient"><option value="">— Select saved client —</option></select><p id="invoiceClientStatus" class="smallnote" role="status">Sign in to load clients.</p></div>
 <div class="field"><label for="invBillTo">Billing entity — editable</label><input id="invBillTo" value="PADEL POINT PTY LTD"></div>
 <div class="field span"><label for="invAddress">Billing address — editable</label><input id="invAddress" value="Unit 4/35 Starkie Dr, Bankstown Aerodrome NSW 2198"></div>
 <div class="field"><label for="invDate">Proposed issue date</label><input id="invDate" type="date" value="2026-11-24"></div>
@@ -139,7 +139,7 @@
 <section class="section hide" id="settings"><div class="panel"><h2>Business settings</h2><div class="fields"><div class="field"><label>Business</label><input value="URBANCARE Exterior Property Care" disabled></div><div class="field"><label>ABN</label><input value="54 638 762 202" disabled></div><div class="field"><label>Outgoing email</label><input value="service@urbancare.au" disabled></div><div class="field"><label>GST setting</label><input value="Not registered for GST (verify before launch)" disabled></div><div class="field span"><label>Invoice number</label><input value="Sequence + MM + YY (e.g. 11126), assigned on issue" disabled></div></div><p class="smallnote">Bank information and email credentials must be stored securely in the future backend; do not commit secrets to GitHub.</p></div></section>
 </main></div><script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script><script>
 const pages={dashboard:['Business overview','Your clients, services and billing in one place'],clients:['Clients','A single directory for quotes, reports and invoices'],quotes:['Quotes','Prepare proposals linked to clients and jobs'],reports:['Site reports','Your current reporting tool remains available'],invoices:['Invoices','Create a draft from the saved client and approved work'],payments:['Payments','Track balances and payment status'],settings:['Settings','Company information and invoicing preferences']};
-const customers={'Padel Point':{name:'PADEL POINT PTY LTD',contact:'Elliot Nicholas',site:'Unit 4/35 Starkie Dr, Bankstown Aerodrome NSW 2198'},'Tribe Padel':{name:'TRIBE PADEL WELLNESS GROUP PTY LTD',contact:'Tefo Lasaigues',site:'16/18 Epping Rd, North Ryde NSW 2113'}};
+// Live clients are loaded from Supabase. No invoice client examples are treated as real records.
 const $=id=>document.getElementById(id); const aud=v=>new Intl.NumberFormat('en-AU',{style:'currency',currency:'AUD'}).format(v);const dateStr=d=>new Intl.DateTimeFormat('en-AU',{day:'2-digit',month:'long',year:'numeric',timeZone:'UTC'}).format(d);
 document.querySelectorAll('[data-page]').forEach(b=>b.addEventListener('click',()=>{const page=b.dataset.page;document.querySelectorAll('[data-page]').forEach(x=>x.classList.toggle('active',x===b));document.querySelectorAll('.section').forEach(x=>x.classList.toggle('hide',x.id!==page));$('pageTitle').textContent=pages[page][0];$('pageSubtitle').textContent=pages[page][1];window.scrollTo(0,0)}));
 // Supabase owns the client directory; never display placeholder records as real clients.
@@ -148,7 +148,7 @@ const SB_URL='https://ysztlxvekbnqoikkvuii.supabase.co';
 const SB_PUBLISHABLE='sb_publishable_HJyktcNs6Cil-rzOckfBAQ_HxrsV_Ji';
 let sb=null;
 function setAuthMessage(message,isError=false){$('authStatus').textContent=isError?'':' '+message;$('authError').textContent=isError?message:'';}
-function showLoggedOut(){authUser=null;document.body.classList.add('auth-locked');$('signedInEmail').textContent='';$('authPassword').value='';}
+function showLoggedOut(){authUser=null;clientRecords=[];document.body.classList.add('auth-locked');$('signedInEmail').textContent='';$('authPassword').value='';$('invClient').replaceChildren(new Option('— Sign in to load clients —',''));$('invoiceClientStatus').textContent='Sign in to load clients.';}
 async function showLoggedIn(user){
  if(!user)return showLoggedOut();
  authUser=user;document.body.classList.remove('auth-locked');$('signedInEmail').textContent=user.email||'Signed in';
@@ -205,8 +205,8 @@ async function loadClients(){
  if(!sb||!authUser)return;
  $('clientStatus').textContent='Loading clients…';
  const {data,error}=await sb.from('clients').select('id,business_name,contact_name,email,phone,site_address,billing_address,notes,created_at').order('business_name',{ascending:true});
- if(error){clientRecords=[];renderClients();$('clientStatus').textContent='Database error: '+error.message;return}
- clientRecords=data||[];renderClients();
+ if(error){clientRecords=[];renderClients();refreshInvoiceClientOptions();$('clientStatus').textContent='Database error: '+error.message;$('invoiceClientStatus').textContent='Could not load clients: '+error.message;return}
+ clientRecords=data||[];renderClients();refreshInvoiceClientOptions();
 }
 function editClient(id){
  const c=clientRecords.find(r=>r.id===id);if(!c)return;
@@ -242,6 +242,31 @@ $('clientForm').addEventListener('submit',async e=>{
  }catch(err){alert('Client was not saved: '+(err.message||'Unknown error'))}
  finally{$('clientSave').disabled=false}
 });
+// Client selection uses the actual UUID from Supabase; no mocked customer names.
+function refreshInvoiceClientOptions(){
+ const select=$('invClient'), prior=select.value;
+ const opts=[new Option('— Select saved client —','')];
+ for(const c of clientRecords)opts.push(new Option(c.business_name+(c.site_address?' — '+c.site_address:''),c.id));
+ select.replaceChildren(...opts);
+ // Preserve the UUID selected in this browser if it still exists, otherwise prompt selection.
+ if(clientRecords.some(c=>c.id===prior))select.value=prior;
+ else if(clientRecords.some(c=>c.id===invoiceLoadedClientId))select.value=invoiceLoadedClientId;
+ else select.value='';
+ const status=$('invoiceClientStatus');
+ status.textContent=clientRecords.length
+   ? 'Loaded '+clientRecords.length+' real client record(s). Choosing one fills billing details and email.'
+   : 'No clients found. Add a client in Clients first.';
+}
+function selectInvoiceClient(){
+ const c=clientRecords.find(x=>x.id===$('invClient').value);
+ if(!c){$('invoiceClientStatus').textContent='Choose a saved client or add one in Clients first.';return}
+ $('invBillTo').value=c.business_name;
+ $('invAddress').value=c.billing_address||c.site_address||'';
+ $('mailTo').value=c.email||'';
+ $('invoiceClientStatus').textContent='Selected '+c.business_name+'. Check the billing address, recipient and price before issuing.';
+ updateInvoice();
+}
+let invoiceLoadedClientId='';
 const INV_FIELDS=['invClient','invBillTo','invAddress','invDate','invTerms','invSequence','invRef','invServiceDate','invReportRef','invService','invQty','invRate','invExtraDesc','invExtraQty','invExtraRate','invNotes','invPay','mailTo','mailSubject','mailBody'];
 const INV_KEY='urbancare-bpl-invoice-draft-v1';
 function updateInvoice(e){
@@ -286,8 +311,19 @@ function saveInvoice(){
  try{localStorage.setItem(INV_KEY,JSON.stringify(record));$('invoiceSaveStatus').textContent='Draft saved in this browser only. Not issued or emailed.';}
  catch(e){$('invoiceSaveStatus').textContent='Browser storage failed. Copy details before leaving.';}
 }
-function loadInvoice(){try{const record=JSON.parse(localStorage.getItem(INV_KEY)||'null');if(record&&typeof record==='object')for(const id of INV_FIELDS){if(typeof record[id]==='string'&&$(id))$(id).value=record[id];}}catch(e){}updateInvoice();}
-$('invClient').addEventListener('change',()=>{const c=customers[$('invClient').value];$('invBillTo').value=c.name;$('invAddress').value=c.site;updateInvoice()});
+function loadInvoice(){
+ try{
+   const record=JSON.parse(localStorage.getItem(INV_KEY)||'null');
+   if(record&&typeof record==='object')for(const id of INV_FIELDS){
+     if(typeof record[id]==='string'&&$(id)){
+       if(id==='invClient'){invoiceLoadedClientId=record[id];continue}
+       $(id).value=record[id];
+     }
+   }
+ }catch(e){}
+ updateInvoice();
+}
+$('invClient').addEventListener('change',selectInvoiceClient);
 $('invoiceForm').onsubmit=updateInvoice;
 $('saveInvoice').onclick=saveInvoice;
 $('printInvoice').onclick=()=>{if(updateInvoice())window.print()};
