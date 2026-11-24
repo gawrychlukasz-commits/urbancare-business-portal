@@ -13,6 +13,7 @@ create or replace function public.register_manual_invoice(
 language plpgsql security definer set search_path=public
 as $$
 declare v_owner uuid:=auth.uid(); v_id uuid; v_client_owner uuid;
+ v_existing public.invoice_history%rowtype;
 begin
  if v_owner is null then raise exception 'Sign in first'; end if;
  if p_client_id is null or p_invoice_number is null or
@@ -34,8 +35,18 @@ begin
  on conflict(owner_id,invoice_number) do nothing
  returning id into v_id;
  if v_id is null then
-   select id into v_id from public.invoice_history
+   select * into v_existing from public.invoice_history
    where owner_id=v_owner and invoice_number=btrim(p_invoice_number);
+   if v_existing.id is null or v_existing.client_id is distinct from p_client_id or
+      v_existing.issue_date is distinct from p_issue_date or
+      v_existing.amount_aud is distinct from p_amount_aud or
+      v_existing.issue_status <> 'sent' then
+     raise exception 'This invoice number is already recorded with different details; existing invoice was not changed';
+   end if;
+   if v_existing.pdf_path is not null then
+     raise exception 'This invoice already has an original PDF attached';
+   end if;
+   v_id:=v_existing.id;
  end if;
  return v_id;
 end $$;
