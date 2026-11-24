@@ -167,6 +167,9 @@
  body.print-quote .quote-foot{break-inside:avoid}
 }
 @media print { @page {size:A4 portrait;margin:12mm 14mm} }
+
+/* Approved quotes are visually distinct in the quote register. */
+#quotesRows select.quote-status-approved{background:#e1f3e5;color:#176b33;border:1px solid #7dc792;border-radius:7px;padding:7px 10px;font-weight:750}
 </style></head><body class="auth-locked">
 <section id="authGate" aria-label="URBANCARE private login"><div class="auth-card">
 <img src="https://reports.urbancare.au/urbancare-wordmark.png" alt="URBANCARE">
@@ -841,6 +844,7 @@ function renderQuoteRows(){
   sel.setAttribute('aria-label','Change status for quote '+(q.quote_number||q.id));
   for(const status of QUOTE_STATUSES.filter(x=>q.status==='draft'||x!=='draft'))sel.add(new Option(status[0].toUpperCase()+status.slice(1),status));
   sel.value=q.status;
+  sel.classList.toggle('quote-status-approved',q.status==='approved');
   sel.addEventListener('change',async()=>{
     const next=sel.value;sel.value=q.status;
     if(next===q.status)return;
