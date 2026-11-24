@@ -60,6 +60,71 @@
 .client-form-wrap .field{min-width:0}
 .client-form-wrap .span{grid-column:1/-1}
 @media(max-width:620px){.client-form-wrap{grid-template-columns:1fr}}
+
+/* Invoice 11126-inspired master layout; print and screen share the same A4 geometry. */
+#invoicePreview{color:#17211b;font-family:Arial,Helvetica,sans-serif;min-height:970px;display:flex;flex-direction:column;padding:42px 39px 32px;max-width:790px}
+#invoicePreview .invoice-header{align-items:start}
+#invoicePreview .invoice-brand .muted{color:#63776b;font-size:11px;letter-spacing:.03em;margin:8px 0 3px}
+#invoicePreview .invoice-brand .smallnote{color:#63776b;line-height:1.65;margin:0;font-size:10.5px}
+#invoicePreview .invoice-heading{text-align:right}
+#invoicePreview .invoice-heading h2{font-size:31px;line-height:1;margin:0 0 3px;color:#294937;letter-spacing:-.045em}
+#invoicePreview #previewNumber{font-size:20px;display:block;line-height:1.1;letter-spacing:0}
+#invoicePreview #previewDates{white-space:pre-line;line-height:1.55;margin-top:9px}
+#invoicePreview .sep{border-color:#d0ddd1;margin:25px 0}
+#invoicePreview .invoice-header+.sep{margin:21px 0 24px;border-top:2px solid #cedecc}
+#invoicePreview .invoice-meta:nth-of-type(2){margin-bottom:22px}
+#invoicePreview .invoice-meta:nth-of-type(2)>div:last-child{text-align:left}
+#invoicePreview .preview-label{text-transform:uppercase;font-weight:750;letter-spacing:.02em;font-size:10px;color:#576b60;margin-bottom:8px}
+#invoicePreview #previewClient{font-size:15px}
+#invoicePreview #previewAddress{line-height:1.55;white-space:pre-line;margin-top:6px;font-size:12px;color:#27332b}
+#invoicePreview #previewRef{font-size:12px;font-weight:700;margin:0 0 7px}
+#invoicePreview #previewServiceDate{font-size:11px;color:#27332b}
+#invoicePreview .invoice-meta:nth-of-type(2)+.sep{border:0;margin:4px 0 14px}
+#invoicePreview .table{font-variant-numeric:tabular-nums}
+#invoicePreview .table thead{background:#eaf0e9}
+#invoicePreview .table th{background:#eaf0e9;color:#294937;font-weight:750;font-size:10px;padding:14px 12px}
+#invoicePreview .table th:first-child{border-radius:6px 0 0 6px}
+#invoicePreview .table th:last-child{border-radius:0 6px 6px 0}
+#invoicePreview .table td{font-size:11px;padding:22px 12px 20px;vertical-align:top;border-bottom:1px solid #cfdcd0}
+#invoicePreview .table th:first-child,#invoicePreview .table td:first-child{width:63%}
+#invoicePreview .table th:nth-child(2),#invoicePreview .table td:nth-child(2){width:9%}
+#invoicePreview .table th:nth-child(3),#invoicePreview .table td:nth-child(3){width:14%}
+#invoicePreview .table th:nth-child(4),#invoicePreview .table td:nth-child(4){width:14%}
+#invoicePreview>.table+.smallnote{font-size:11px;color:#6c7d70;margin:23px 7px 12px}
+#invoicePreview>.table+.smallnote+.sep{display:none}
+#invoicePreview .invoice-total{align-self:flex-end;display:flex;align-items:center;gap:27px;background:#edf2ec;border-radius:6px;padding:16px 20px;color:#2c4e39;margin:12px 0 34px;font-variant-numeric:tabular-nums}
+#invoicePreview .invoice-total span{font-size:11px;font-weight:750;color:#65796a;letter-spacing:.06em}
+#invoicePreview .invoice-total strong{font-size:23px}
+#invoicePreview .invoice-total+.sep{margin:0 0 14px}
+#invoicePreview .two{gap:34px}
+#invoicePreview .two b{font-size:11px;text-transform:uppercase;color:#2a5039}
+#invoicePreview .two p{font-size:11px;color:#2c332d;line-height:1.7}
+#invoicePreview .invoice-footer{margin-top:auto;border-top:1px solid #d0ddd1;padding-top:12px;display:grid;gap:6px;color:#677a6b;font-size:10px}
+#invoicePreview .invoice-footer b{font-size:10px}
+@media print{
+ @page{size:A4 portrait;margin:12mm 14mm}
+ #invoicePreview{min-height:270mm!important;max-width:none!important;padding:0!important;font-size:10pt!important}
+ #invoicePreview .invoice-header{padding-bottom:0!important;border:0!important}
+ #invoicePreview .invoice-heading h2{font-size:29px!important;margin:0 0 3px!important;color:#294937!important}
+ #invoicePreview .invoice-meta{gap:12mm!important}
+ #invoicePreview .invoice-meta:nth-of-type(2)>div:last-child{text-align:left!important}
+ #invoicePreview .invoice-brand img{max-width:67mm!important;max-height:27mm!important}
+ #invoicePreview .sep{border-color:#d0ddd1!important;margin:6mm 0!important}
+ #invoicePreview .invoice-header+.sep{border-top:2px solid #cedecc!important}
+ #invoicePreview .invoice-meta:nth-of-type(2)+.sep{margin:2mm 0 5mm!important;border:0!important}
+ #invoicePreview .table th{font-size:8pt!important;padding:10px 8px!important;background:#eaf0e9!important}
+ #invoicePreview .table td{font-size:9pt!important;padding:17px 8px!important}
+ #invoicePreview>.table+.smallnote{font-size:8pt!important;margin:5mm 4px 3mm!important}
+ #invoicePreview .invoice-total{padding:5mm 6mm!important;margin:2mm 0 9mm!important;gap:6mm!important;background:#edf2ec!important}
+ #invoicePreview .invoice-total strong{font-size:18pt!important}
+ #invoicePreview .two{gap:11mm!important}
+ #invoicePreview .two p{font-size:8.5pt!important}
+ #invoicePreview .invoice-footer{margin-top:auto!important;font-size:7pt!important}
+ #invoicePreview .invoice-footer b{font-size:7pt!important}
+ #invoicePreview img{object-fit:contain}
+ #invoicePreview .invoice-heading{color:#294937!important}
+}
+
 </style></head><body class="auth-locked">
 <section id="authGate" aria-label="URBANCARE private login"><div class="auth-card">
 <img src="https://reports.urbancare.au/urbancare-wordmark.png" alt="URBANCARE">
@@ -109,7 +174,7 @@
 <div class="field span"><label for="invAddress">Billing address — editable</label><input id="invAddress" value="Unit 4/35 Starkie Dr, Bankstown Aerodrome NSW 2198"></div>
 <div class="field"><label for="invDate">Proposed issue date</label><input id="invDate" type="date" value="2026-11-24"></div>
 <div class="field"><label for="invTerms">Payment terms (days) — confirm</label><input id="invTerms" type="number" min="0" value="14"></div>
-<div class="field"><label for="invSequence">Monthly sequence — proposed, not reserved</label><input id="invSequence" type="number" min="1" step="1" value="1"></div>
+<div class="field"><label for="invSequence">Monthly sequence — proposed, not reserved</label><input id="invSequence" type="number" min="1" step="1" value="2"></div>
 <div class="field"><label for="invRef">Quote / job reference</label><input id="invRef" value="Quote 1808"></div>
 <div class="field"><label for="invServiceDate">Service date — confirm</label><input id="invServiceDate" type="date"></div>
 <div class="field"><label for="invReportRef">Service report reference</label><input id="invReportRef" placeholder="Add report number if available"></div>
@@ -126,10 +191,10 @@
 <div class="muted" id="invoiceSaveStatus" role="status">Unsaved draft. Figures are examples until you verify actual work and agreed price.</div><div class="field" style="margin-top:14px"><label for="savedInvoiceDrafts">Saved invoice drafts — online</label><select id="savedInvoiceDrafts"><option value="">— New unsaved draft —</option></select></div><div class="toolbar"><button class="btn outline small" type="button" id="openSavedInvoice">Open selected draft</button><button class="btn outline small" type="button" id="refreshSavedInvoice">Refresh drafts</button></div><p class="smallnote">Drafts sync to your Supabase account. They do not allocate invoice numbers, issue invoices, or email customers. Invoice 11126 has already been sent and must not be reused.</p>
 </form></div>
 <div class="invoice" id="invoicePreview">
-<div class="invoice-meta"><div><img src="https://reports.urbancare.au/urbancare-wordmark.png" alt="URBANCARE" style="width:200px;max-width:100%"><div class="muted">EXTERIOR PROPERTY CARE</div><p class="smallnote">Lukasz Gawrych · ABN 54 638 762 202<br>service@urbancare.au · urbancare.au</p></div>
-<div style="text-align:right"><div class="preview-label">DRAFT SAMPLE · NOT ISSUED</div><h2>INVOICE</h2><b id="previewNumber">11126</b><div class="smallnote" id="previewDates"></div></div></div><hr class="sep">
+<div class="invoice-meta invoice-header"><div class="invoice-brand"><img src="https://reports.urbancare.au/urbancare-wordmark.png" alt="URBANCARE" style="width:240px;max-width:100%"><div class="muted">EXTERIOR PROPERTY CARE</div><p class="smallnote">Lukasz Gawrych&nbsp; | &nbsp;ABN 54 638 762 202<br>service@urbancare.au&nbsp; | &nbsp;urbancare.au</p></div>
+<div class="invoice-heading"><h2>INVOICE</h2><b id="previewNumber">21126</b><div class="smallnote" id="previewDates"></div></div></div><hr class="sep">
 <div class="invoice-meta"><div><div class="preview-label">Bill to</div><b id="previewClient"></b><p class="smallnote" id="previewAddress"></p></div><div><div class="preview-label">References</div><p id="previewRef"></p><p id="previewServiceDate" class="smallnote"></p></div></div><hr class="sep">
-<table class="table"><thead><tr><th>Description</th><th>Qty</th><th>Rate</th><th style="text-align:right">Amount</th></tr></thead><tbody><tr><td id="previewService"></td><td id="previewQty"></td><td id="previewRate"></td><td id="previewAmount" style="text-align:right"></td></tr><tr id="previewExtraRow" class="hide"><td id="previewExtraDesc"></td><td id="previewExtraQty"></td><td id="previewExtraRate"></td><td id="previewExtraAmount" style="text-align:right"></td></tr></tbody></table><p class="smallnote">GST not charged — URBANCARE is not registered for GST.</p><hr class="sep"><div class="amount" id="previewTotal"></div><hr class="sep"><div class="two"><div><b>Payment details</b><p class="smallnote" style="white-space:pre-line" id="previewPay"></p></div><div><b>Notes</b><p class="smallnote" style="white-space:pre-line" id="previewNotes"></p></div></div><p class="smallnote" style="margin-top:22px">Draft only. Confirm the billed service, customer, price, payment details and final invoice design before issue.</p></div>
+<table class="table"><thead><tr><th>Description</th><th>Qty</th><th>Rate</th><th style="text-align:right">Amount</th></tr></thead><tbody><tr><td id="previewService"></td><td id="previewQty"></td><td id="previewRate"></td><td id="previewAmount" style="text-align:right"></td></tr><tr id="previewExtraRow" class="hide"><td id="previewExtraDesc"></td><td id="previewExtraQty"></td><td id="previewExtraRate"></td><td id="previewExtraAmount" style="text-align:right"></td></tr></tbody></table><p class="smallnote">GST not charged — URBANCARE is not registered for GST.</p><hr class="sep"><div class="invoice-total"><span>TOTAL DUE</span><strong id="previewTotal"></strong></div><hr class="sep"><div class="two"><div><b>Payment details</b><p class="smallnote" style="white-space:pre-line" id="previewPay"></p></div><div><b>Notes</b><p class="smallnote" style="white-space:pre-line" id="previewNotes"></p></div></div><div class="invoice-footer"><b>PREPARED FOR REVIEW — NOT YET ISSUED</b><span>Confirm customer, invoice number, payment details and amounts before sending.</span></div></div>
 <div class="panel no-print" id="importExistingInvoicePanel">
 <div class="heading"><div><h2>Import existing invoice</h2><p class="muted">For invoices already sent outside BPL. Save the original PDF securely with the existing customer record.</p></div><span class="status draft">Manual import</span></div>
 <form id="manualInvoiceForm">
@@ -416,7 +481,7 @@ function updateInvoice(e){
  $('previewNumber').textContent=invoiceNo;
  const duplicate=issuedInvoices.some(x=>x.invoice_number===invoiceNo&&x.issue_status!=='void');
  if(duplicate){$('invoiceSaveStatus').textContent='Warning: '+invoiceNo+' has already been issued. This is a draft only; choose a different sequence before future issue.';}
- $('previewDates').textContent='Issue: '+dateStr(issue)+' · Due: '+dateStr(due);
+ $('previewDates').textContent=dateStr(issue)+'\nDue: '+dateStr(due);
  $('previewClient').textContent=$('invBillTo').value;
  $('previewAddress').textContent=$('invAddress').value;
  $('previewRef').textContent=[$('invRef').value,$('invReportRef').value].filter(Boolean).join(' · ');
