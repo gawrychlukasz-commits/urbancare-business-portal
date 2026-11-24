@@ -83,7 +83,7 @@
 <div class="side-bottom">URBANCARE · Exterior Property Care<br>Prototype · No live data sync</div></aside>
 <main class="main"><header class="topline"><div><div class="eyebrow">URBANCARE / Operations</div><h1 id="pageTitle">Business overview</h1><div id="pageSubtitle" class="muted">Your clients, services and billing in one place</div></div><div id="userBar"><span id="signedInEmail"></span><button type="button" class="btn outline small" id="signOutBtn">Sign out</button></div></header>
 <div class="notice"><b>Development portal.</b> Login and the Clients table are connected to Supabase. Quotes, dashboard figures and invoices are still demonstrations, and invoices are saved only in this browser. Existing reports are not synchronised. Do not issue invoices from the prototype.</div>
-<section class="section" id="dashboard"><div class="stats"><div class="stat"><span>Active clients</span><strong id="statClients">2</strong><small>Example records</small></div><div class="stat"><span>Quotes awaiting approval</span><strong>1</strong><small>Illustration</small></div><div class="stat"><span>To invoice</span><strong id="statToInvoice">1</strong><small>Example workflow</small></div><div class="stat"><span>Outstanding balance</span><strong>$0</strong><small>No real invoices issued</small></div></div><div class="grid"><div class="panel"><div class="heading"><div><h2>Recent activity</h2><div class="muted">Illustrative overview of the connected workflow</div></div></div><table class="table"><thead><tr><th>Client</th><th>Record</th><th>Stage</th></tr></thead><tbody><tr><td>Padel Point</td><td>Glass cleaning / service report</td><td><span class="status warn">Ready for invoice review</span></td></tr><tr><td>Tribe Padel</td><td>Glass cleaning / quote</td><td><span class="status draft">Pending approval</span></td></tr></tbody></table></div><div class="panel"><h2>How it will work</h2><div class="step"><span class="num">1</span><div><b>Save the client once</b><p>Contact, site and billing details shared across modules</p></div></div><div class="step"><span class="num">2</span><div><b>Prepare quote & complete work</b><p>Link accepted quote to a job and report</p></div></div><div class="step"><span class="num">3</span><div><b>Generate invoice from job</b><p>Review final amount and issue number on send</p></div></div><div class="step"><span class="num">4</span><div><b>Track payment</b><p>Record settled and overdue balances</p></div></div></div></div></section>
+<section class="section" id="dashboard"><div class="stats"><div class="stat"><span>Active clients</span><strong id="statClients">2</strong><small>Example records</small></div><div class="stat"><span>Quotes awaiting approval</span><strong>1</strong><small>Illustration</small></div><div class="stat"><span>To invoice</span><strong id="statToInvoice">1</strong><small>Example workflow</small></div><div class="stat"><span>Invoice history total</span><strong id="statInvoiced">—</strong><small>Payment status is not verified</small></div></div><div class="grid"><div class="panel"><div class="heading"><div><h2>Recent activity</h2><div class="muted">Illustrative overview of the connected workflow</div></div></div><table class="table"><thead><tr><th>Client</th><th>Record</th><th>Stage</th></tr></thead><tbody><tr><td>Padel Point</td><td>Glass cleaning / service report</td><td><span class="status warn">Ready for invoice review</span></td></tr><tr><td>Tribe Padel</td><td>Glass cleaning / quote</td><td><span class="status draft">Pending approval</span></td></tr></tbody></table></div><div class="panel"><h2>How it will work</h2><div class="step"><span class="num">1</span><div><b>Save the client once</b><p>Contact, site and billing details shared across modules</p></div></div><div class="step"><span class="num">2</span><div><b>Prepare quote & complete work</b><p>Link accepted quote to a job and report</p></div></div><div class="step"><span class="num">3</span><div><b>Generate invoice from job</b><p>Review final amount and issue number on send</p></div></div><div class="step"><span class="num">4</span><div><b>Track payment</b><p>Record settled and overdue balances</p></div></div></div></div></section>
 <section class="section hide" id="clients"><div class="toolbar"><input id="clientSearch" aria-label="Search client" placeholder="Search client or contact"><button class="btn outline" id="refreshClients" type="button">Refresh clients</button></div>
 <div class="panel"><div class="heading"><div><h2>Client directory</h2><p class="muted">Protected Supabase records; saved under your signed-in account.</p></div><span class="status good">Connected</span></div>
 <p id="clientStatus" class="smallnote" role="status">Waiting for login…</p>
@@ -130,6 +130,9 @@
 <div style="text-align:right"><div class="preview-label">DRAFT SAMPLE · NOT ISSUED</div><h2>INVOICE</h2><b id="previewNumber">11126</b><div class="smallnote" id="previewDates"></div></div></div><hr class="sep">
 <div class="invoice-meta"><div><div class="preview-label">Bill to</div><b id="previewClient"></b><p class="smallnote" id="previewAddress"></p></div><div><div class="preview-label">References</div><p id="previewRef"></p><p id="previewServiceDate" class="smallnote"></p></div></div><hr class="sep">
 <table class="table"><thead><tr><th>Description</th><th>Qty</th><th>Rate</th><th style="text-align:right">Amount</th></tr></thead><tbody><tr><td id="previewService"></td><td id="previewQty"></td><td id="previewRate"></td><td id="previewAmount" style="text-align:right"></td></tr><tr id="previewExtraRow" class="hide"><td id="previewExtraDesc"></td><td id="previewExtraQty"></td><td id="previewExtraRate"></td><td id="previewExtraAmount" style="text-align:right"></td></tr></tbody></table><p class="smallnote">GST not charged — URBANCARE is not registered for GST.</p><hr class="sep"><div class="amount" id="previewTotal"></div><hr class="sep"><div class="two"><div><b>Payment details</b><p class="smallnote" style="white-space:pre-line" id="previewPay"></p></div><div><b>Notes</b><p class="smallnote" style="white-space:pre-line" id="previewNotes"></p></div></div><p class="smallnote" style="margin-top:22px">Draft only. Confirm the billed service, customer, price, payment details and final invoice design before issue.</p></div>
+<div class="panel no-print"><div class="heading"><div><h2>Invoice history</h2><p class="muted">Read-only issued invoice register, linked to Supabase clients.</p></div><button class="btn outline small" id="refreshInvoiceHistory" type="button">Refresh history</button></div>
+<p class="smallnote" id="invoiceHistoryStatus" role="status">Waiting for connection…</p>
+<table class="table"><thead><tr><th>Invoice</th><th>Client</th><th>Issue date</th><th>Total</th><th>Status</th></tr></thead><tbody id="invoiceHistoryRows"></tbody></table></div>
 <div class="panel no-print"><div class="heading"><h2>Outlook email — editable preview</h2><span class="status draft">Not sent</span></div>
 <div class="fields"><div class="field"><label for="mailTo">Recipient — confirm before Outlook draft</label><input id="mailTo" type="email" placeholder="Enter confirmed billing email"></div><div class="field"><label for="mailSubject">Subject</label><input id="mailSubject"></div><div class="field span"><label for="mailBody">Email body</label><textarea id="mailBody" rows="8"></textarea></div></div>
 <div class="toolbar"><button class="btn outline" id="fillEmail" type="button">Generate email from invoice</button><button class="btn outline" id="copyEmail" type="button">Copy email text</button></div>
@@ -153,6 +156,7 @@ async function showLoggedIn(user){
  if(!user)return showLoggedOut();
  authUser=user;document.body.classList.remove('auth-locked');$('signedInEmail').textContent=user.email||'Signed in';
  await loadClients();
+ await loadInvoiceHistory();
 }
 async function initAuth(){
  if(!window.supabase?.createClient){setAuthMessage('Cannot load login library. Check internet access and refresh.',true);return}
@@ -267,6 +271,39 @@ function selectInvoiceClient(){
  updateInvoice();
 }
 let invoiceLoadedClientId='';
+// Read-only ledger for invoices already issued. No automatic issue/send.
+let issuedInvoices=[];
+async function loadInvoiceHistory(){
+ if(!sb||!authUser)return;
+ const status=$('invoiceHistoryStatus');
+ status.textContent='Loading invoice history…';
+ const {data,error}=await sb.from('invoice_history')
+   .select('invoice_number,issue_date,amount_aud,issue_status,payment_status,client_id')
+   .order('issue_date',{ascending:false});
+ if(error){
+   status.textContent='Invoice history is not set up yet. Run database/002_invoice_history.sql in Supabase before using it. ('+error.message+')';
+   $('invoiceHistoryRows').replaceChildren();
+   $('statInvoiced').textContent='—';
+   return;
+ }
+ issuedInvoices=data||[];
+ const tbody=$('invoiceHistoryRows');tbody.replaceChildren();
+ for(const inv of issuedInvoices){
+   const c=clientRecords.find(x=>x.id===inv.client_id);
+   const tr=document.createElement('tr');
+   const values=[inv.invoice_number,c?.business_name||'Client record',inv.issue_date,
+      aud(Number(inv.amount_aud)),inv.issue_status==='void'?'Void':(inv.payment_status==='paid'?'Paid':'Sent · payment unconfirmed')];
+   for(const value of values){const td=document.createElement('td');td.textContent=value;tr.appendChild(td)}
+   tbody.appendChild(tr);
+ }
+ if(!issuedInvoices.length){
+   const tr=document.createElement('tr'),td=document.createElement('td');
+   td.colSpan=5;td.textContent='No issued invoices recorded yet.';tr.appendChild(td);tbody.appendChild(tr);
+ }
+ $('statInvoiced').textContent=aud(issuedInvoices.filter(x=>x.issue_status!=='void').reduce((sum,x)=>sum+Number(x.amount_aud||0),0));
+ status.textContent=issuedInvoices.length+' issued invoice record(s). Payment status requires manual confirmation.';
+}
+$('refreshInvoiceHistory').onclick=loadInvoiceHistory;
 const INV_FIELDS=['invClient','invBillTo','invAddress','invDate','invTerms','invSequence','invRef','invServiceDate','invReportRef','invService','invQty','invRate','invExtraDesc','invExtraQty','invExtraRate','invNotes','invPay','mailTo','mailSubject','mailBody'];
 const INV_KEY='urbancare-bpl-invoice-draft-v1';
 function updateInvoice(e){
