@@ -237,6 +237,19 @@
 .dashboard-shortcut:hover{border-color:#7c9d80;box-shadow:0 5px 16px rgba(23,32,27,.09);transform:translateY(-1px)}
 .dashboard-shortcut:focus-visible{outline:3px solid #53765a;outline-offset:3px}
 .dashboard-shortcut small{color:#3c694a}
+
+/* URBANCARE BPL panoramic photo: put the optimised upload in assets/bpl-background.jpg.
+   Light neutral overlay preserves legibility without changing the client/invoice data. */
+body{
+ background-color:#f4f5f1;
+ background-image:linear-gradient(rgba(244,245,241,.81),rgba(244,245,241,.86)),url("assets/bpl-background.jpg");
+ background-position:center center;
+ background-size:cover;
+ background-attachment:fixed;
+ background-repeat:no-repeat;
+}
+@media(max-width:700px){body{background-attachment:scroll;background-position:center top}}
+@media print{body{background:#fff!important}}
 </style></head><body class="auth-locked">
 <section id="authGate" aria-label="URBANCARE private login"><div class="auth-card">
 <img src="https://reports.urbancare.au/urbancare-wordmark.png" alt="URBANCARE">
