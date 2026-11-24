@@ -119,7 +119,7 @@ begin
      'qScope','High-pressure cleaning of approximately 420 m² of external walkways and entrance steps.',
      'qSelected','custom','qCustomTotal','2500',
      'qArrangements','Mirko offered to forward the quote to the property management team. Clean-walkway image was a sample, not a guaranteed outcome.',
-     'sourceQuoteNote','Actual original PDF number unknown; do not assign 1808 because Padel Point uses it.',
+     'sourceQuoteNote','The Cove PDF is numbered 1808. Migration 012 assigns a separate internal BPL reference, 1808-COVE; Padel Point keeps 1808.',
      'originalPdfPending',true
    ),false,'email','2026-11-23');
    raise notice 'Staged Cove Dining with number TBC';
