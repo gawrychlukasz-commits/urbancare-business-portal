@@ -149,8 +149,8 @@
 <main class="main"><header class="topline"><div><div class="eyebrow">URBANCARE / Operations</div><h1 id="pageTitle">Business overview</h1><div id="pageSubtitle" class="muted">Your clients, services and billing in one place</div></div><div id="userBar"><span id="signedInEmail"></span><button type="button" class="btn outline small" id="signOutBtn">Sign out</button></div></header>
 <div class="notice"><b>Development portal.</b> Login and the Clients table are connected to Supabase. Quotes, dashboard figures and invoices are still demonstrations, and invoices are saved only in this browser. Existing reports are not synchronised. Do not issue invoices from the prototype.</div>
 <section class="section" id="dashboard"><div class="stats"><div class="stat"><span>Active clients</span><strong id="statClients">2</strong><small>Example records</small></div><div class="stat"><span>Quotes awaiting approval</span><strong>1</strong><small>Illustration</small></div><div class="stat"><span>To invoice</span><strong id="statToInvoice">1</strong><small>Example workflow</small></div><div class="stat"><span>Invoice history total</span><strong id="statInvoiced">—</strong><small>Payment status is not verified</small></div></div><div class="grid"><div class="panel"><div class="heading"><div><h2>Recent activity</h2><div class="muted">Illustrative overview of the connected workflow</div></div></div><table class="table"><thead><tr><th>Client</th><th>Record</th><th>Stage</th></tr></thead><tbody><tr><td>Padel Point</td><td>Glass cleaning / service report</td><td><span class="status warn">Ready for invoice review</span></td></tr><tr><td>Tribe Padel</td><td>Glass cleaning / quote</td><td><span class="status draft">Pending approval</span></td></tr></tbody></table></div><div class="panel"><h2>How it will work</h2><div class="step"><span class="num">1</span><div><b>Save the client once</b><p>Contact, site and billing details shared across modules</p></div></div><div class="step"><span class="num">2</span><div><b>Prepare quote & complete work</b><p>Link accepted quote to a job and report</p></div></div><div class="step"><span class="num">3</span><div><b>Generate invoice from job</b><p>Review final amount and issue number on send</p></div></div><div class="step"><span class="num">4</span><div><b>Track payment</b><p>Record settled and overdue balances</p></div></div></div></div></section>
-<section class="section hide" id="clients"><div class="toolbar"><input id="clientSearch" aria-label="Search client" placeholder="Search client or contact"><button class="btn outline" id="refreshClients" type="button">Refresh clients</button></div>
-<div class="panel"><div class="heading"><div><h2>Client directory</h2><p class="muted">Protected Supabase records; saved under your signed-in account.</p></div><span class="status good">Connected</span></div>
+<section class="section hide" id="clients"><div class="toolbar"><input id="clientSearch" aria-label="Search client" placeholder="Search client or contact"><button class="btn outline" id="refreshClients" type="button">Refresh clients</button><button class="btn outline" id="toggleInactiveClients" type="button">Inactive Clients (0)</button></div>
+<div class="panel"><div class="heading"><div><h2 id="clientsListTitle">Active client directory</h2><p class="muted">Protected Supabase records; inactive clients retain their existing history.</p></div><span class="status good">Connected</span></div>
 <p id="clientStatus" class="smallnote" role="status">Waiting for login…</p>
 <table class="table"><thead><tr><th>Business</th><th>Contact</th><th>Location</th><th></th></tr></thead><tbody id="clientRows"></tbody></table></div>
 <div class="panel"><h2 id="clientFormTitle">Add client</h2><form id="clientForm"><div class="client-form-wrap">
@@ -271,25 +271,67 @@ $('signOutBtn').onclick=async()=>{
 function resetClientForm(){
  editClientId=null;$('clientForm').reset();$('clientFormTitle').textContent='Add client';$('clientSave').textContent='Save client';
 }
+let viewingInactiveClients=false;
 function renderClients(){
  const term=$('clientSearch').value.trim().toLocaleLowerCase('en-AU');
- const selected=clientRecords.filter(c=>[c.business_name,c.contact_name,c.email,c.site_address].join(' ').toLocaleLowerCase('en-AU').includes(term));
+ const selected=clientRecords.filter(c=>Boolean(c.is_active)!==viewingInactiveClients)
+   .filter(c=>[c.business_name,c.contact_name,c.email,c.site_address].join(' ').toLocaleLowerCase('en-AU').includes(term));
+ const activeCount=clientRecords.filter(c=>c.is_active).length;
+ const inactiveCount=clientRecords.length-activeCount;
+ $('toggleInactiveClients').textContent=viewingInactiveClients?'Active Clients ('+activeCount+')':'Inactive Clients ('+inactiveCount+')';
+ $('clientsListTitle').textContent=viewingInactiveClients?'Inactive clients':'Active client directory';
  const tbody=$('clientRows');tbody.replaceChildren();
  for(const c of selected){
   const tr=document.createElement('tr');
   for(const value of [c.business_name,c.contact_name||'—',c.site_address||'—']){
     const td=document.createElement('td');td.textContent=value;tr.appendChild(td);
   }
-  const td=document.createElement('td');const btn=document.createElement('button');btn.type='button';btn.className='btn outline small';btn.textContent='Edit';btn.addEventListener('click',()=>editClient(c.id));td.appendChild(btn);tr.appendChild(td);tbody.appendChild(tr);
+  const td=document.createElement('td');
+  const actions=document.createElement('div');actions.className='toolbar';actions.style.margin='0';actions.style.gap='6px';
+  const edit=document.createElement('button');edit.type='button';edit.className='btn outline small';edit.textContent='Edit';edit.addEventListener('click',()=>editClient(c.id));actions.appendChild(edit);
+  const action=document.createElement('button');action.type='button';action.className='btn outline small';
+  action.textContent=viewingInactiveClients?'Restore':'Cancel';
+  action.addEventListener('click',()=>setClientActive(c.id,viewingInactiveClients));
+  actions.appendChild(action);
+  if(viewingInactiveClients){
+    const remove=document.createElement('button');remove.type='button';remove.className='btn outline small';remove.textContent='Delete permanently';
+    remove.addEventListener('click',()=>deleteInactiveClient(c.id));actions.appendChild(remove);
+  }
+  td.appendChild(actions);tr.appendChild(td);tbody.appendChild(tr);
  }
- if(!selected.length){const tr=document.createElement('tr'),td=document.createElement('td');td.colSpan=4;td.textContent='No saved clients match. Add your first client below.';tr.appendChild(td);tbody.appendChild(tr);}
- $('statClients').textContent=clientRecords.length;
- $('clientStatus').textContent=clientRecords.length+' saved client(s) on your Supabase account.';
+ if(!selected.length){
+   const tr=document.createElement('tr'),td=document.createElement('td');td.colSpan=4;
+   td.textContent=viewingInactiveClients?'No inactive clients match.':'No active clients match. Add a client below.';
+   tr.appendChild(td);tbody.appendChild(tr);
+ }
+ $('statClients').textContent=activeCount;
+ $('clientStatus').textContent=activeCount+' active · '+inactiveCount+' inactive client(s) in Supabase.';
 }
+async function setClientActive(id,isActive){
+ const c=clientRecords.find(x=>x.id===id);if(!c||!sb||!authUser)return;
+ const verb=isActive?'restore':'cancel';
+ if(!confirm((isActive?'Restore ':'Cancel ')+c.business_name+'? '+(isActive?'The client will return to the active directory.':'The client will move to Inactive Clients. Existing records will be preserved.')))return;
+ const {data,error}=await sb.from('clients').update({is_active:isActive}).eq('id',id).select('id').single();
+ if(error){alert('Unable to '+verb+' client: '+error.message);return}
+ if(editClientId===id)resetClientForm();
+ await loadClients();
+}
+async function deleteInactiveClient(id){
+ const c=clientRecords.find(x=>x.id===id);if(!c||c.is_active||!sb||!authUser)return;
+ if(!confirm('Permanently delete '+c.business_name+'? This cannot be undone. Clients with BPL invoice history or drafts cannot be deleted. Other reports outside BPL are not yet linked.'))return;
+ const typed=prompt('Type DELETE to permanently remove '+c.business_name+'.');
+ if(typed!=='DELETE')return;
+ const {error}=await sb.rpc('delete_inactive_client',{p_client_id:id});
+ if(error){alert('Client was NOT deleted: '+error.message);return}
+ if(editClientId===id)resetClientForm();
+ await loadClients();
+ alert('Inactive client permanently deleted.');
+}
+$('toggleInactiveClients').onclick=()=>{viewingInactiveClients=!viewingInactiveClients;renderClients()};
 async function loadClients(){
  if(!sb||!authUser)return;
  $('clientStatus').textContent='Loading clients…';
- const {data,error}=await sb.from('clients').select('id,business_name,contact_name,email,phone,site_address,billing_address,notes,created_at').order('business_name',{ascending:true});
+ const {data,error}=await sb.from('clients').select('id,business_name,contact_name,email,phone,site_address,billing_address,notes,created_at,is_active').order('business_name',{ascending:true});
  if(error){clientRecords=[];renderClients();refreshInvoiceClientOptions();$('clientStatus').textContent='Database error: '+error.message;$('invoiceClientStatus').textContent='Could not load clients: '+error.message;return}
  clientRecords=data||[];renderClients();refreshInvoiceClientOptions();refreshManualClientOptions();
 }
@@ -331,15 +373,15 @@ $('clientForm').addEventListener('submit',async e=>{
 function refreshInvoiceClientOptions(){
  const select=$('invClient'), prior=select.value;
  const opts=[new Option('— Select saved client —','')];
- for(const c of clientRecords)opts.push(new Option(c.business_name+(c.site_address?' — '+c.site_address:''),c.id));
+ for(const c of clientRecords.filter(x=>x.is_active))opts.push(new Option(c.business_name+(c.site_address?' — '+c.site_address:''),c.id));
  select.replaceChildren(...opts);
  // Preserve the UUID selected in this browser if it still exists, otherwise prompt selection.
- if(clientRecords.some(c=>c.id===prior))select.value=prior;
- else if(clientRecords.some(c=>c.id===invoiceLoadedClientId))select.value=invoiceLoadedClientId;
+ if(clientRecords.some(c=>c.id===prior&&c.is_active))select.value=prior;
+ else if(clientRecords.some(c=>c.id===invoiceLoadedClientId&&c.is_active))select.value=invoiceLoadedClientId;
  else select.value='';
  const status=$('invoiceClientStatus');
- status.textContent=clientRecords.length
-   ? 'Loaded '+clientRecords.length+' real client record(s). Choosing one fills billing details and email.'
+ status.textContent=clientRecords.filter(c=>c.is_active).length
+   ? 'Loaded '+clientRecords.filter(c=>c.is_active).length+' active client record(s). Choosing one fills billing details and email.'
    : 'No clients found. Add a client in Clients first.';
 }
 function selectInvoiceClient(){
@@ -356,8 +398,8 @@ let invoiceLoadedClientId='';
 function refreshManualClientOptions(){
  const select=$('manualClient'),keep=select.value;
  select.replaceChildren(new Option('— Select saved client —',''));
- for(const c of clientRecords)select.add(new Option(c.business_name+(c.site_address?' — '+c.site_address:''),c.id));
- if(clientRecords.some(c=>c.id===keep))select.value=keep;
+ for(const c of clientRecords.filter(x=>x.is_active))select.add(new Option(c.business_name+(c.site_address?' — '+c.site_address:''),c.id));
+ if(clientRecords.some(c=>c.id===keep&&c.is_active))select.value=keep;
 }
 function prepareExistingInvoiceImport(inv){
  $('manualClient').value=inv.client_id;
