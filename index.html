@@ -761,7 +761,7 @@ async function loadInvoiceHistory(){
  status.textContent=issuedInvoices.length+' issued invoice record(s). Payment status requires manual confirmation.';
 }
 $('refreshInvoiceHistory').onclick=loadInvoiceHistory;
-const INV_FIELDS=['invClient','invBillTo','invAddress','invDate','invTerms','invSequence','invRef','invServiceDate','invReportRef','invService','invQty','invRate','invExtraDesc','invExtraQty','invExtraRate','invNotes','invPay','mailTo','mailSubject','mailBody'];
+const INV_FIELDS=['invClient','invBillTo','invAddress','invDate','invTerms','invSequence','invRef','invPO','invServiceDate','invReportRef','invService','invQty','invRate','invExtraDesc','invExtraQty','invExtraRate','invNotes','invPay','mailTo','mailSubject','mailBody'];
 const INV_KEY='urbancare-bpl-invoice-draft-v1';
 function updateInvoice(e){
  if(e)e.preventDefault();
@@ -784,7 +784,7 @@ function updateInvoice(e){
  $('previewDates').textContent=dateStr(issue)+'\nDue: '+dateStr(due);
  $('previewClient').textContent=$('invBillTo').value;
  $('previewAddress').textContent=$('invAddress').value;
- $('previewRef').textContent=[$('invRef').value,$('invReportRef').value].filter(Boolean).join(' · ');
+ $('previewRef').textContent=[$('invRef').value,$('invPO').value.trim()?'PO: '+$('invPO').value.trim():'',$('invReportRef').value].filter(Boolean).join(' · ');
  $('previewServiceDate').textContent=$('invServiceDate').value?'Service date: '+$('invServiceDate').value:'Service date: [TO CONFIRM]';
  $('previewService').textContent=$('invService').value;
  $('previewQty').textContent=qty;$('previewRate').textContent=aud(rate);$('previewAmount').textContent=aud(amount);
