@@ -253,7 +253,7 @@
 <div class="field span"><label for="clientSite">Site address</label><input id="clientSite"></div>
 <div class="field span"><label for="clientBilling">Billing address</label><input id="clientBilling"></div>
 <div class="field span"><label for="clientNotes">Internal notes</label><textarea id="clientNotes" rows="2"></textarea></div>
-<div class="field span hide" id="clientVerificationBox"><label class="client-verify-label"><input type="checkbox" id="clientVerified"> I have reviewed these client details and confirm they are correct</label><p class="smallnote">Saving a client without ticking this box keeps it marked RED / VERIFY.</p></div>
+<div class="field span hide" id="clientVerificationBox"><p class="smallnote"><strong>Verification:</strong> Review the prefilled information. Clicking <strong>Save / Verify client</strong> confirms the details, removes the red highlight and changes the status to VERIFIED.</p></div>
 </div><div class="toolbar"><button type="submit" class="btn" id="clientSave">Save client</button><button class="btn outline" type="button" id="clientCancel">Cancel / New</button></div></form></div></section>
 <section class="section hide" id="quotes">
 <div class="panel no-print"><div class="heading"><div><h2>Quote register</h2><p class="muted">Real quotes linked to Supabase clients. No sample records are imported automatically.</p></div><button type="button" class="btn outline small" id="quotesRefresh">Refresh</button></div>
@@ -532,7 +532,6 @@ function editClient(id,verifyMode=false){
  editClientId=c.id;
  const mustVerify=c.is_verified===false;
  $('clientVerificationBox').classList.toggle('hide',!mustVerify);
- $('clientVerified').checked=false;
  for(const [field,key] of [['clientBusiness','business_name'],['clientContact','contact_name'],['clientEmail','email'],['clientPhone','phone'],['clientSite','site_address'],['clientBilling','billing_address'],['clientNotes','notes']])$(field).value=c[key]||'';
  $('clientFormTitle').textContent=mustVerify?'VERIFY client details':'Edit client';
  $('clientSave').textContent=mustVerify?'Save / Verify client':'Update client';
@@ -545,7 +544,7 @@ $('clientForm').addEventListener('submit',async e=>{
  e.preventDefault();if(!sb||!authUser){alert('Sign in first.');return}
  const record={business_name:$('clientBusiness').value.trim(),contact_name:$('clientContact').value.trim()||null,email:$('clientEmail').value.trim()||null,phone:$('clientPhone').value.trim()||null,site_address:$('clientSite').value.trim()||null,billing_address:$('clientBilling').value.trim()||null,notes:$('clientNotes').value.trim()||null};
  const existingRecord=clientRecords.find(c=>c.id===editClientId);
- if(existingRecord?.is_verified===false)record.is_verified=$('clientVerified').checked;
+ if(existingRecord?.is_verified===false)record.is_verified=true; // Save / Verify is the explicit verification action.
  if(!record.business_name){alert('Enter business name');return}
  // Warn about likely duplicates before writing. Matching names at different sites
  // can be legitimate, so let the owner explicitly confirm the exception.
@@ -562,7 +561,8 @@ $('clientForm').addEventListener('submit',async e=>{
  $('clientSave').disabled=true;
  try{
  const query=editClientId?sb.from('clients').update(record).eq('id',editClientId):sb.from('clients').insert(record);
- const {error}=await query.select('id').single();if(error)throw error;
+ const {data:saved,error}=await query.select('id,is_verified').single();if(error)throw error;
+ if(existingRecord?.is_verified===false&&!saved?.is_verified)throw new Error('Client saved but verification was not confirmed.');
  resetClientForm();await loadClients();
  }catch(err){alert('Client was not saved: '+(err.message||'Unknown error'))}
  finally{$('clientSave').disabled=false}
