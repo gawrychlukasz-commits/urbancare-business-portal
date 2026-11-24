@@ -125,6 +125,47 @@
  #invoicePreview .invoice-heading{color:#294937!important}
 }
 
+/* One-page quote inspired by URBANCARE Quote 1808; separate from invoice print output. */
+.quote-sheet{background:white;color:#202421;border:1px solid #e3e8e3;border-radius:12px;max-width:790px;margin:18px auto;padding:30px 33px;min-height:970px;font-family:Arial,Helvetica,sans-serif;display:flex;flex-direction:column;font-size:12px}
+.quote-top{display:flex;justify-content:space-between;align-items:flex-end;gap:20px;min-height:106px}
+.quote-logo{width:225px;max-width:100%;height:auto}
+.quote-brand-sub{font-size:10.5px;line-height:1.45;margin-top:11px}
+.quote-head-right{text-align:right;line-height:1.5;font-size:11px;white-space:pre-line}
+.quote-head-right strong{font-size:19px;font-weight:500}
+.quote-rule{border-top:1px solid #495049;margin:20px 0 15px}
+.quote-to{font-size:11px;line-height:1.65;white-space:pre-line}
+.quote-to strong{font-size:13px}
+.quote-content{display:grid;grid-template-columns:1.18fr .94fr;gap:27px;margin:8px 0 22px;flex:1}
+.quote-copy{min-width:0}
+.quote-copy h2{font-size:21px;line-height:1.2;font-weight:400;margin:0 0 9px}
+.quote-copy h3{font-size:12px;margin:20px 0 6px}
+.quote-copy p{font-size:11px;white-space:pre-line;line-height:1.52;margin:0 0 9px;overflow-wrap:anywhere}
+.quote-option{display:flex;justify-content:space-between;gap:12px;border-top:1px solid #ddd;padding:8px 0 6px;font-size:11px}
+.quote-option strong{white-space:nowrap}
+.quote-tax{font-size:10px!important;font-style:italic;margin-top:6px!important}
+.quote-picture{display:flex;flex-direction:column;min-height:270px}
+.quote-picture img{width:100%;height:auto;max-height:500px;object-fit:contain}
+.quote-picture small{font-size:9px;color:#687469;margin-top:7px}
+#qpImagePlaceholder{border:1px dashed #cbd6cb;border-radius:6px;padding:30px 14px;display:grid;place-items:center;min-height:220px;text-align:center;color:#728171;font-size:11px}
+.quote-foot{display:grid;grid-template-columns:1fr 1fr;gap:35px;margin-top:auto;padding-top:18px;font-size:11px}
+.quote-foot p{font-size:11px;line-height:1.5;margin:5px 0}
+.quote-draft{border-top:1px solid #e0e5e0;margin-top:16px;padding-top:8px;font-size:9px;color:#7b837b}
+@media(max-width:560px){.quote-sheet{padding:18px;min-height:0}.quote-content{grid-template-columns:1fr}.quote-top{align-items:start}.quote-logo{width:165px}}
+@media print{
+ body.print-quote .app{display:block!important;min-height:0!important}
+ body.print-quote .sidebar,body.print-quote .topline,body.print-quote .notice{display:none!important}
+ body.print-quote .main{padding:0!important;max-width:none!important;margin:0!important}
+ body.print-quote .section{display:none!important}
+ body.print-quote #quotes{display:block!important}
+ body.print-quote #quotes>.panel{display:none!important}
+ body.print-quote #quotePreview{display:flex!important;max-width:none!important;min-height:270mm!important;margin:0!important;border:0!important;border-radius:0!important;padding:0!important;box-shadow:none!important}
+ body.print-quote #invoicePreview{display:none!important}
+ body.print-quote .quote-content{grid-template-columns:1.18fr .94fr!important;gap:7mm!important}
+ body.print-quote .quote-picture img{max-height:140mm!important}
+ body.print-quote .quote-rule{margin:5mm 0 4mm!important}
+ body.print-quote .quote-foot{break-inside:avoid}
+}
+@media print { @page {size:A4 portrait;margin:12mm 14mm} }
 </style></head><body class="auth-locked">
 <section id="authGate" aria-label="URBANCARE private login"><div class="auth-card">
 <img src="https://reports.urbancare.au/urbancare-wordmark.png" alt="URBANCARE">
@@ -162,7 +203,53 @@
 <div class="field span"><label for="clientBilling">Billing address</label><input id="clientBilling"></div>
 <div class="field span"><label for="clientNotes">Internal notes</label><textarea id="clientNotes" rows="2"></textarea></div>
 </div><div class="toolbar"><button type="submit" class="btn" id="clientSave">Save client</button><button class="btn outline" type="button" id="clientCancel">Cancel / New</button></div></form></div></section>
-<section class="section hide" id="quotes"><div class="panel"><div class="heading"><h2>Quotes</h2><span class="status draft">Proposed module</span></div><p class="muted">Quotes will be linked to the same client record and job history. Your final quote layout will be retained.</p><table class="table"><thead><tr><th>Reference</th><th>Client</th><th>Status</th></tr></thead><tbody><tr><td>1808</td><td>Padel Point</td><td><span class="status draft">Example only</span></td></tr><tr><td>1806</td><td>Tribe Padel</td><td><span class="status warn">Pending approval (sample)</span></td></tr></tbody></table></div></section>
+<section class="section hide" id="quotes">
+<div class="panel no-print"><div class="heading"><div><h2>Quote register</h2><p class="muted">Real quotes linked to Supabase clients. No sample records are imported automatically.</p></div><button type="button" class="btn outline small" id="quotesRefresh">Refresh</button></div>
+<p id="quotesStatus" class="smallnote" role="status">Waiting for connection…</p>
+<table class="table"><thead><tr><th>Quote</th><th>Client</th><th>Amount</th><th>Status</th><th>Actions</th></tr></thead><tbody id="quotesRows"></tbody></table></div>
+<div class="panel no-print"><div class="heading"><h2 id="quoteFormTitle">New quotation</h2><span class="status draft">Draft</span></div>
+<form id="quoteForm">
+<div class="fields">
+<div class="field"><label for="qClient">Client *</label><select id="qClient" required><option value="">— Select active client —</option></select></div>
+<div class="field"><label for="qNumber">Quote number (unique, optional for draft)</label><input id="qNumber" maxlength="50" placeholder="Enter next unused number"></div>
+<div class="field"><label for="qDate">Quote date *</label><input type="date" id="qDate" required></div>
+<div class="field"><label for="qValidity">Valid for (days)</label><input type="number" id="qValidity" value="60" min="1" max="365"></div>
+<div class="field span"><label for="qTitle">Service title</label><input id="qTitle" placeholder="e.g. Padel Court Glass Cleaning"></div>
+<div class="field span"><label for="qScope">Scope of work *</label><textarea id="qScope" rows="4" required placeholder="Describe exactly what will be cleaned and included"></textarea></div>
+<div class="field span"><label for="qMethod">Cleaning method / frequency</label><input id="qMethod" placeholder="e.g. wash and squeegee | once per month"></div>
+<div class="field span"><label for="qExclusions">Not included / exclusions</label><textarea id="qExclusions" rows="3" placeholder="e.g. frames, tracks, fencing, nets"></textarea></div>
+<div class="field span"><label for="qOption1">Service option 1 — description</label><input id="qOption1" placeholder="e.g. Internal glass only — 4 courts"></div>
+<div class="field"><label for="qPrice1">Option 1 amount (AUD)</label><input type="number" id="qPrice1" step="0.01" min="0" value="0"></div>
+<div class="field"><label for="qOption2">Service option 2 — description</label><input id="qOption2" placeholder="e.g. Internal and external glass"></div>
+<div class="field"><label for="qPrice2">Option 2 amount (AUD)</label><input type="number" id="qPrice2" step="0.01" min="0" value="0"></div>
+<div class="field"><label for="qSelected">Quoted total basis</label><select id="qSelected"><option value="1">Option 1</option><option value="2">Option 2</option><option value="custom">Custom total / one service</option></select></div>
+<div class="field"><label for="qCustomTotal">Custom total (AUD; if selected)</label><input type="number" id="qCustomTotal" min="0" step="0.01" value="0"></div>
+<div class="field span"><label for="qExtras">Optional extras / conditions</label><textarea id="qExtras" rows="2"></textarea></div>
+<div class="field span"><label for="qArrangements">Arrangements — access, water, parking, timing</label><textarea id="qArrangements" rows="4" placeholder="Confirm arrangements with client"></textarea></div>
+<div class="field span"><label for="qImage">Site photograph / marked scope image (optional; JPG/PNG/WebP up to 10 MB)</label><input id="qImage" type="file" accept="image/jpeg,image/png,image/webp"></div>
+</div>
+<div class="toolbar"><button class="btn" type="submit" id="qSave">Save quote draft online</button><button class="btn outline" type="button" id="qNew">New quote</button><button class="btn outline" type="button" id="qPrint">Print / Save quote PDF</button></div>
+<p id="qFormStatus" class="smallnote" role="status">Quotation number is not automatically reserved. Draft PDF is not issued or emailed.</p>
+</form></div>
+<div class="quote-sheet" id="quotePreview">
+<div class="quote-top"><div><img src="https://reports.urbancare.au/urbancare-wordmark.png" alt="URBANCARE" class="quote-logo"><div class="quote-brand-sub">EXTERIOR PROPERTY CARE<br>Lukasz Gawrych | ABN 54 638 762 202<br>urbancare.au | service@urbancare.au</div></div><div class="quote-head-right"><strong id="qpNumber">QUOTE — DRAFT</strong><div id="qpDates"></div></div></div>
+<div class="quote-rule"></div>
+<div class="quote-to"><div class="quote-kicker">To:</div><strong id="qpClient"></strong><div id="qpAddress"></div><div id="qpContact"></div></div>
+<div class="quote-rule"></div>
+<div class="quote-content"><div class="quote-copy">
+<h2 id="qpTitle">Service quotation</h2><p id="qpScope"></p><p id="qpMethod"></p>
+<h3>Not included</h3><p id="qpExclusions"></p>
+<h3>Service options</h3>
+<div id="qpOption1" class="quote-option"><span id="qpOption1Label"></span><strong id="qpOption1Amount"></strong></div>
+<div id="qpOption2" class="quote-option"><span id="qpOption2Label"></span><strong id="qpOption2Amount"></strong></div>
+<div id="qpCustom" class="quote-option"><span>Agreed service total</span><strong id="qpCustomAmount"></strong></div>
+<p class="quote-tax">GST not charged. URBANCARE is not registered for GST.</p>
+<h3>Arrangements</h3><p id="qpArrangements"></p>
+<p id="qpExtras"></p></div>
+<div class="quote-picture"><img id="qpImage" alt="Site scope reference" class="hide"><p id="qpImagePlaceholder">Site photo / marked scope image can be added to this quotation.</p><small>Site image for reference only; confirm scope before acceptance.</small></div></div>
+<div class="quote-foot"><div><strong>Thank you,</strong><p>Lukasz Gawrych<br>Owner &amp; Operator</p></div><div><strong>Accept the quote</strong><p>Reply in writing with the quote number, agreed scope and selected price. Service dates arranged after acceptance.</p></div></div>
+<div class="quote-draft">PREPARED FOR REVIEW — QUOTATION NOT YET ISSUED</div>
+</div></section>
 <section class="section hide" id="reports"><div class="panel"><h2>Existing reports stay intact</h2><p>Continue using the live reporting tool while we develop secure online records and a reliable migration method.</p><a class="btn" style="display:inline-block;text-decoration:none" href="https://reports.urbancare.au/">Open existing reporting tool</a><p class="smallnote">On your GitHub Pages deployment this opens your existing report creator. It currently stores reports on each device.</p></div><div class="panel"><h2>Next integration</h2><p class="muted">Use the existing export-backup function to prepare for migration, then link saved reports to shared client IDs and job IDs in the future database. Do not overwrite browser data.</p></div></section>
 <section class="section hide" id="invoices">
 <div class="panel no-print"><div class="heading"><div><h2>Editable invoice draft</h2><p class="muted">Prepare a draft for Padel Point, add extra items, and review the PDF and email before issue.</p></div><span class="status draft">Draft only</span></div>
