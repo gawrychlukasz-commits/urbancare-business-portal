@@ -799,7 +799,7 @@ function refreshQuotePreview(){
  $('qpArrangements').textContent=d.qArrangements||'Access, water, parking, working hours and proposed date to be confirmed.';
  $('qpExtras').textContent=d.qExtras||'';
  const q=quoteRecords.find(q=>q.id===activeQuoteId);
- $('qFormTitle').textContent=activeQuoteId?'Edit quote '+(q?.quote_number||'(unnumbered)'):'New quotation';
+ $('quoteFormTitle').textContent=activeQuoteId?'Edit quote '+(q?.quote_number||'(unnumbered)'):'New quotation';
  $('qSave').disabled=!!q&&q.status!=='draft';
  $('qSave').textContent=q?.status==='draft'?'Save quote draft online':'Save quote draft online';
  $('quotePreview').querySelector('.quote-draft').textContent=
